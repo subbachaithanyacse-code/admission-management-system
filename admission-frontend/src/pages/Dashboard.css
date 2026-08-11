@@ -1,0 +1,422 @@
+/* =========================================
+   DASHBOARD MAIN
+========================================= */
+
+.dashboard {
+  padding: 35px;
+  min-height: calc(100vh - 70px);
+  background: #f5f7fb;
+  box-sizing: border-box;
+}
+
+
+/* =========================================
+   DASHBOARD HEADER
+========================================= */
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 35px;
+}
+
+.dashboard-header h1 {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.dashboard-header p {
+  margin: 8px 0 0;
+  color: #6b7280;
+  font-size: 15px;
+}
+
+
+/* =========================================
+   REFRESH BUTTON
+========================================= */
+
+.refresh-btn {
+  border: none;
+  background: #2563eb;
+  color: white;
+  padding: 12px 22px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  transition: 0.3s;
+}
+
+.refresh-btn:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+
+/* =========================================
+   SUMMARY CARDS
+========================================= */
+
+.dashboard-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+}
+
+.dashboard-card {
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-height: 105px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 7px 20px rgba(0, 0, 0, 0.10);
+}
+
+
+/* =========================================
+   CARD ICON
+========================================= */
+
+.card-icon {
+  width: 65px;
+  height: 65px;
+  min-width: 65px;
+  border-radius: 14px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 30px;
+}
+
+
+/* Student Icon */
+
+.students-icon {
+  background: #dbeafe;
+}
+
+
+/* Course Icon */
+
+.courses-icon {
+  background: #dcfce7;
+}
+
+
+/* Admission Icon */
+
+.admissions-icon {
+  background: #fef3c7;
+}
+
+
+/* =========================================
+   CARD CONTENT
+========================================= */
+
+.card-content h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.card-content h2 {
+  margin: 6px 0 0;
+  font-size: 34px;
+  font-weight: 700;
+  color: #111827;
+}
+
+
+/* =========================================
+   COMMON SECTION
+========================================= */
+
+.dashboard-section {
+  background: white;
+  border-radius: 12px;
+  padding: 22px;
+  margin-top: 28px;
+
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
+}
+
+.dashboard-section h2 {
+  margin: 0 0 22px;
+  font-size: 25px;
+  color: #1f2937;
+}
+
+
+/* =========================================
+   ADMISSION STATUS
+========================================= */
+
+.status-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.status-card {
+  padding: 25px;
+  text-align: center;
+  border-radius: 10px;
+  background: #f8fafc;
+
+  transition: 0.3s;
+}
+
+.status-card:hover {
+  transform: translateY(-3px);
+}
+
+
+/* Status Number */
+
+.status-card h3 {
+  margin: 0 0 8px;
+  font-size: 32px;
+  font-weight: 700;
+  color: #111827;
+}
+
+
+/* Status Text */
+
+.status-card p {
+  margin: 0;
+  font-size: 16px;
+  color: #64748b;
+}
+
+
+/* Approved */
+
+.status-card.approved {
+  border-left: 5px solid #22c55e;
+}
+
+
+/* Pending */
+
+.status-card.pending {
+  border-left: 5px solid #f59e0b;
+}
+
+
+/* Rejected */
+
+.status-card.rejected {
+  border-left: 5px solid #ef4444;
+}
+
+
+/* =========================================
+   RECENT ADMISSIONS
+========================================= */
+
+.recent-section {
+  overflow: hidden;
+}
+
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+
+/* Table */
+
+.table-container table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 700px;
+}
+
+
+/* Table Header */
+
+.table-container th {
+  text-align: left;
+  padding: 14px 12px;
+
+  color: #374151;
+  font-size: 15px;
+  font-weight: 600;
+
+  border-bottom: 2px solid #e5e7eb;
+}
+
+
+/* Table Body */
+
+.table-container td {
+  padding: 14px 12px;
+
+  color: #4b5563;
+  font-size: 14px;
+
+  border-bottom: 1px solid #e5e7eb;
+}
+
+
+/* Table Hover */
+
+.table-container tbody tr:hover {
+  background: #f8fafc;
+}
+
+
+/* =========================================
+   STATUS BADGES
+========================================= */
+
+.status-badge {
+  display: inline-block;
+
+  padding: 6px 14px;
+
+  border-radius: 20px;
+
+  font-size: 13px;
+  font-weight: 600;
+}
+
+
+/* Approved */
+
+.status-approved {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+
+/* Pending */
+
+.status-pending {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+
+/* Rejected */
+
+.status-rejected {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+
+/* =========================================
+   NO DATA
+========================================= */
+
+.no-data {
+  text-align: center;
+
+  padding: 35px;
+
+  color: #6b7280;
+
+  font-size: 15px;
+}
+
+
+/* =========================================
+   RESPONSIVE - TABLET
+========================================= */
+
+@media (max-width: 1000px) {
+
+  .dashboard {
+    padding: 25px;
+  }
+
+  .dashboard-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .status-cards {
+    grid-template-columns: 1fr;
+  }
+
+}
+
+
+/* =========================================
+   RESPONSIVE - MOBILE
+========================================= */
+
+@media (max-width: 600px) {
+
+  .dashboard {
+    padding: 18px;
+  }
+
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .dashboard-header h1 {
+    font-size: 25px;
+  }
+
+  .refresh-btn {
+    width: 100%;
+  }
+
+  .dashboard-card {
+    padding: 20px;
+  }
+
+  .dashboard-section {
+    padding: 18px;
+  }
+
+  .dashboard-section h2 {
+    font-size: 21px;
+  }
+
+}
+
+
+/* =========================================
+   SMALL SCREEN
+========================================= */
+
+@media (max-width: 400px) {
+
+  .card-icon {
+    width: 55px;
+    height: 55px;
+    min-width: 55px;
+    font-size: 25px;
+  }
+
+  .card-content h2 {
+    font-size: 28px;
+  }
+
+  .card-content h3 {
+    font-size: 14px;
+  }
+
+}
