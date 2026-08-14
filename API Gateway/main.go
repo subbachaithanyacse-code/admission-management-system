@@ -42,6 +42,8 @@ func main() {
 	// HEALTH CHECK
 	// =========================
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("API Gateway Running Successfully"))
 	})
 
@@ -52,6 +54,8 @@ func main() {
 		AllowedOrigins: []string{
 			"http://localhost:3000",
 			"http://localhost:3001",
+			"http://localhost:3002",
+			"http://localhost:3003",
 		},
 
 		AllowedMethods: []string{
@@ -69,19 +73,21 @@ func main() {
 		AllowCredentials: true,
 	})
 
+	handler := c.Handler(router)
+
 	// =========================
 	// START API GATEWAY
 	// =========================
 
 	fmt.Println("=================================")
-	fmt.Println(" API Gateway Started ")
-	fmt.Println(" Running on Port :8086 ")
+	fmt.Println(" API Gateway Started")
+	fmt.Println(" Running on Port :8086")
 	fmt.Println("=================================")
 
 	log.Fatal(
 		http.ListenAndServe(
 			":8086",
-			c.Handler(router),
+			handler,
 		),
 	)
 }

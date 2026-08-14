@@ -3,6 +3,7 @@ package Controllers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -28,8 +29,8 @@ func CreateAdmission(w http.ResponseWriter, r *http.Request) {
 
 	var req AdmissionRequest
 
-	// Read JSON
 	err := json.NewDecoder(r.Body).Decode(&req)
+
 	if err != nil {
 		http.Error(
 			w,
@@ -189,6 +190,9 @@ func CreateAdmission(w http.ResponseWriter, r *http.Request) {
 	)
 
 	if err != nil {
+
+		fmt.Println("CREATE ADMISSION ERROR:", err)
+
 		http.Error(
 			w,
 			err.Error(),
@@ -212,10 +216,111 @@ func CreateAdmission(w http.ResponseWriter, r *http.Request) {
 }
 
 // ============================================
-// GET ALL ADMISSIONS
+// GET ALL ADMISSIONS - PAGINATION
 // ============================================
 
 func GetAdmissions(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set(
+		"Content-Type",
+		"application/json",
+	)
+
+	// ============================================
+	// DEFAULT PAGINATION
+	// ============================================
+
+	page := 1
+	limit := 10
+
+	// ============================================
+	// READ PAGE
+	// ============================================
+
+	if pageValue := r.URL.Query().Get("page"); pageValue != "" {
+
+		value, err := strconv.Atoi(pageValue)
+
+		if err != nil || value <= 0 {
+			http.Error(
+				w,
+				"Invalid page number",
+				http.StatusBadRequest,
+			)
+			return
+		}
+
+		page = value
+	}
+
+	// ============================================
+	// READ LIMIT
+	// ============================================
+
+	if limitValue := r.URL.Query().Get("limit"); limitValue != "" {
+
+		value, err := strconv.Atoi(limitValue)
+
+		if err != nil || value <= 0 {
+			http.Error(
+				w,
+				"Invalid limit",
+				http.StatusBadRequest,
+			)
+			return
+		}
+
+		limit = value
+	}
+
+	// ============================================
+	// MAXIMUM LIMIT
+	// ============================================
+
+	if limit > 100 {
+		http.Error(
+			w,
+			"Maximum limit is 100 records per request",
+			http.StatusBadRequest,
+		)
+		return
+	}
+
+	// ============================================
+	// CALCULATE OFFSET
+	// ============================================
+
+	offset := (page - 1) * limit
+
+	// ============================================
+	// GET TOTAL ADMISSIONS
+	// ============================================
+
+	var totalAdmissions int
+
+	err := Database.DB.QueryRow(
+		context.Background(),
+		"SELECT COUNT(*) FROM admissions",
+	).Scan(&totalAdmissions)
+
+	if err != nil {
+
+		fmt.Println(
+			"ADMISSION COUNT ERROR:",
+			err,
+		)
+
+		http.Error(
+			w,
+			"Failed to count admissions",
+			http.StatusInternalServerError,
+		)
+		return
+	}
+
+	// ============================================
+	// GET PAGINATED ADMISSIONS
+	// ============================================
 
 	rows, err := Database.DB.Query(
 		context.Background(),
@@ -227,13 +332,22 @@ func GetAdmissions(w http.ResponseWriter, r *http.Request) {
 			status,
 			created_at
 		FROM admissions
-		ORDER BY id DESC`,
+		ORDER BY id DESC
+		LIMIT $1 OFFSET $2`,
+		limit,
+		offset,
 	)
 
 	if err != nil {
+
+		fmt.Println(
+			"ADMISSION QUERY ERROR:",
+			err,
+		)
+
 		http.Error(
 			w,
-			err.Error(),
+			"Failed to fetch admissions",
 			http.StatusInternalServerError,
 		)
 		return
@@ -241,7 +355,11 @@ func GetAdmissions(w http.ResponseWriter, r *http.Request) {
 
 	defer rows.Close()
 
-	var admissions []Models.Admission
+	// Return [] instead of null
+	admissions := make(
+		[]Models.Admission,
+		0,
+	)
 
 	for rows.Next() {
 
@@ -257,9 +375,15 @@ func GetAdmissions(w http.ResponseWriter, r *http.Request) {
 		)
 
 		if err != nil {
+
+			fmt.Println(
+				"ADMISSION SCAN ERROR:",
+				err,
+			)
+
 			http.Error(
 				w,
-				err.Error(),
+				"Failed to read admission data",
 				http.StatusInternalServerError,
 			)
 			return
@@ -271,22 +395,67 @@ func GetAdmissions(w http.ResponseWriter, r *http.Request) {
 		)
 	}
 
-	// Check rows error
+	// ============================================
+	// CHECK ROWS ERROR
+	// ============================================
+
 	if err := rows.Err(); err != nil {
+
+		fmt.Println(
+			"ADMISSION ROWS ERROR:",
+			err,
+		)
+
 		http.Error(
 			w,
-			err.Error(),
+			"Failed to read admissions",
 			http.StatusInternalServerError,
 		)
 		return
 	}
 
+	// ============================================
+	// TOTAL PAGES
+	// ============================================
+
+	totalPages := 0
+
+	if totalAdmissions > 0 {
+		totalPages =
+			(totalAdmissions + limit - 1) / limit
+	}
+
+	// ============================================
+	// PAGINATION HEADERS
+	// ============================================
+
 	w.Header().Set(
-		"Content-Type",
-		"application/json",
+		"X-Total-Count",
+		strconv.Itoa(totalAdmissions),
 	)
 
-	json.NewEncoder(w).Encode(admissions)
+	w.Header().Set(
+		"X-Page",
+		strconv.Itoa(page),
+	)
+
+	w.Header().Set(
+		"X-Limit",
+		strconv.Itoa(limit),
+	)
+
+	w.Header().Set(
+		"X-Total-Pages",
+		strconv.Itoa(totalPages),
+	)
+
+	// ============================================
+	// RESPONSE
+	// ============================================
+
+	json.NewEncoder(w).Encode(
+		admissions,
+	)
 }
 
 // ============================================
@@ -332,6 +501,7 @@ func GetAdmissionByID(w http.ResponseWriter, r *http.Request) {
 	)
 
 	if err != nil {
+
 		http.Error(
 			w,
 			"Admission Not Found",
@@ -345,7 +515,9 @@ func GetAdmissionByID(w http.ResponseWriter, r *http.Request) {
 		"application/json",
 	)
 
-	json.NewEncoder(w).Encode(admission)
+	json.NewEncoder(w).Encode(
+		admission,
+	)
 }
 
 // ============================================
@@ -376,7 +548,9 @@ func UpdateAdmission(w http.ResponseWriter, r *http.Request) {
 
 	var req AdmissionRequest
 
-	err = json.NewDecoder(r.Body).Decode(&req)
+	err = json.NewDecoder(
+		r.Body,
+	).Decode(&req)
 
 	if err != nil {
 		http.Error(
@@ -533,6 +707,12 @@ func UpdateAdmission(w http.ResponseWriter, r *http.Request) {
 	)
 
 	if err != nil {
+
+		fmt.Println(
+			"UPDATE ADMISSION ERROR:",
+			err,
+		)
+
 		http.Error(
 			w,
 			err.Error(),
@@ -541,7 +721,10 @@ func UpdateAdmission(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check whether record exists
+	// ============================================
+	// CHECK RECORD EXISTS
+	// ============================================
+
 	if result.RowsAffected() == 0 {
 		http.Error(
 			w,
@@ -556,9 +739,11 @@ func UpdateAdmission(w http.ResponseWriter, r *http.Request) {
 		"application/json",
 	)
 
-	json.NewEncoder(w).Encode(map[string]string{
-		"message": "Admission Updated Successfully",
-	})
+	json.NewEncoder(w).Encode(
+		map[string]string{
+			"message": "Admission Updated Successfully",
+		},
+	)
 }
 
 // ============================================
@@ -587,6 +772,12 @@ func DeleteAdmission(w http.ResponseWriter, r *http.Request) {
 	)
 
 	if err != nil {
+
+		fmt.Println(
+			"DELETE ADMISSION ERROR:",
+			err,
+		)
+
 		http.Error(
 			w,
 			err.Error(),
@@ -609,7 +800,9 @@ func DeleteAdmission(w http.ResponseWriter, r *http.Request) {
 		"application/json",
 	)
 
-	json.NewEncoder(w).Encode(map[string]string{
-		"message": "Admission Deleted Successfully",
-	})
+	json.NewEncoder(w).Encode(
+		map[string]string{
+			"message": "Admission Deleted Successfully",
+		},
+	)
 }

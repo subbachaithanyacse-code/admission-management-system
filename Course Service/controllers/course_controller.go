@@ -3,6 +3,7 @@ package Controllers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -13,7 +14,10 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// Create Course
+// =====================================================
+// CREATE COURSE
+// =====================================================
+
 func CreateCourse(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
@@ -23,28 +27,48 @@ func CreateCourse(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&course)
 
 	if err != nil {
-		http.Error(w, "Invalid Request", http.StatusBadRequest)
+		http.Error(
+			w,
+			"Invalid Request",
+			http.StatusBadRequest,
+		)
 		return
 	}
 
 	// Validation
 	if strings.TrimSpace(course.CourseCode) == "" {
-		http.Error(w, "Course Code is required", http.StatusBadRequest)
+		http.Error(
+			w,
+			"Course Code is required",
+			http.StatusBadRequest,
+		)
 		return
 	}
 
 	if strings.TrimSpace(course.CourseName) == "" {
-		http.Error(w, "Course Name is required", http.StatusBadRequest)
+		http.Error(
+			w,
+			"Course Name is required",
+			http.StatusBadRequest,
+		)
 		return
 	}
 
 	if course.Fee < 0 {
-		http.Error(w, "Fee cannot be negative", http.StatusBadRequest)
+		http.Error(
+			w,
+			"Fee cannot be negative",
+			http.StatusBadRequest,
+		)
 		return
 	}
 
 	if course.Seats < 0 {
-		http.Error(w, "Seats cannot be negative", http.StatusBadRequest)
+		http.Error(
+			w,
+			"Seats cannot be negative",
+			http.StatusBadRequest,
+		)
 		return
 	}
 
@@ -73,6 +97,8 @@ func CreateCourse(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		fmt.Println("CREATE COURSE ERROR:", err)
+
 		http.Error(
 			w,
 			err.Error(),
@@ -86,10 +112,110 @@ func CreateCourse(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// Get All Courses
+// =====================================================
+// GET ALL COURSES - PAGINATION
+// =====================================================
+
 func GetCourses(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
+
+	// -------------------------------------------------
+	// Default pagination
+	// -------------------------------------------------
+
+	page := 1
+	limit := 10
+
+	// -------------------------------------------------
+	// Read page
+	// Example:
+	// /courses?page=2
+	// -------------------------------------------------
+
+	if pageValue := r.URL.Query().Get("page"); pageValue != "" {
+
+		value, err := strconv.Atoi(pageValue)
+
+		if err != nil || value <= 0 {
+			http.Error(
+				w,
+				"Invalid page number",
+				http.StatusBadRequest,
+			)
+			return
+		}
+
+		page = value
+	}
+
+	// -------------------------------------------------
+	// Read limit
+	// Example:
+	// /courses?limit=20
+	// -------------------------------------------------
+
+	if limitValue := r.URL.Query().Get("limit"); limitValue != "" {
+
+		value, err := strconv.Atoi(limitValue)
+
+		if err != nil || value <= 0 {
+			http.Error(
+				w,
+				"Invalid limit",
+				http.StatusBadRequest,
+			)
+			return
+		}
+
+		limit = value
+	}
+
+	// -------------------------------------------------
+	// Maximum records per API request
+	// -------------------------------------------------
+
+	if limit > 100 {
+		http.Error(
+			w,
+			"Maximum limit is 100 records per request",
+			http.StatusBadRequest,
+		)
+		return
+	}
+
+	// -------------------------------------------------
+	// Calculate OFFSET
+	// -------------------------------------------------
+
+	offset := (page - 1) * limit
+
+	// -------------------------------------------------
+	// Get total course count
+	// -------------------------------------------------
+
+	var totalCourses int
+
+	err := Database.DB.QueryRow(
+		context.Background(),
+		"SELECT COUNT(*) FROM courses",
+	).Scan(&totalCourses)
+
+	if err != nil {
+
+		fmt.Println("COURSE COUNT ERROR:", err)
+
+		http.Error(
+			w,
+			"Failed to count courses",
+			http.StatusInternalServerError,
+		)
+		return
+	}
+
+	// -------------------------------------------------
+	// Get paginated courses
+	// -------------------------------------------------
 
 	rows, err := Database.DB.Query(
 		context.Background(),
@@ -102,13 +228,19 @@ func GetCourses(w http.ResponseWriter, r *http.Request) {
 			seats,
 			created_at
 		FROM courses
-		ORDER BY id`,
+		ORDER BY id
+		LIMIT $1 OFFSET $2`,
+		limit,
+		offset,
 	)
 
 	if err != nil {
+
+		fmt.Println("COURSE QUERY ERROR:", err)
+
 		http.Error(
 			w,
-			err.Error(),
+			"Failed to fetch courses",
 			http.StatusInternalServerError,
 		)
 		return
@@ -116,7 +248,9 @@ func GetCourses(w http.ResponseWriter, r *http.Request) {
 
 	defer rows.Close()
 
-	var courses []Models.Course
+	// Important:
+	// Return [] instead of null when no records exist.
+	courses := make([]Models.Course, 0)
 
 	for rows.Next() {
 
@@ -133,9 +267,12 @@ func GetCourses(w http.ResponseWriter, r *http.Request) {
 		)
 
 		if err != nil {
+
+			fmt.Println("COURSE SCAN ERROR:", err)
+
 			http.Error(
 				w,
-				err.Error(),
+				"Failed to read course data",
 				http.StatusInternalServerError,
 			)
 			return
@@ -144,10 +281,67 @@ func GetCourses(w http.ResponseWriter, r *http.Request) {
 		courses = append(courses, course)
 	}
 
+	// -------------------------------------------------
+	// Check rows error
+	// -------------------------------------------------
+
+	if err := rows.Err(); err != nil {
+
+		fmt.Println("COURSE ROWS ERROR:", err)
+
+		http.Error(
+			w,
+			"Failed to read courses",
+			http.StatusInternalServerError,
+		)
+		return
+	}
+
+	// -------------------------------------------------
+	// Calculate total pages
+	// -------------------------------------------------
+
+	totalPages := 0
+
+	if totalCourses > 0 {
+		totalPages = (totalCourses + limit - 1) / limit
+	}
+
+	// -------------------------------------------------
+	// Pagination headers
+	// -------------------------------------------------
+
+	w.Header().Set(
+		"X-Total-Count",
+		strconv.Itoa(totalCourses),
+	)
+
+	w.Header().Set(
+		"X-Page",
+		strconv.Itoa(page),
+	)
+
+	w.Header().Set(
+		"X-Limit",
+		strconv.Itoa(limit),
+	)
+
+	w.Header().Set(
+		"X-Total-Pages",
+		strconv.Itoa(totalPages),
+	)
+
+	// -------------------------------------------------
+	// Return courses
+	// -------------------------------------------------
+
 	json.NewEncoder(w).Encode(courses)
 }
 
-// Get Course By ID
+// =====================================================
+// GET COURSE BY ID
+// =====================================================
+
 func GetCourseByID(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
@@ -156,7 +350,7 @@ func GetCourseByID(w http.ResponseWriter, r *http.Request) {
 
 	id, err := strconv.Atoi(params["id"])
 
-	if err != nil {
+	if err != nil || id <= 0 {
 		http.Error(
 			w,
 			"Invalid Course ID",
@@ -191,6 +385,9 @@ func GetCourseByID(w http.ResponseWriter, r *http.Request) {
 	)
 
 	if err != nil {
+
+		fmt.Println("GET COURSE ERROR:", err)
+
 		http.Error(
 			w,
 			"Course Not Found",
@@ -202,7 +399,10 @@ func GetCourseByID(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(course)
 }
 
-// Update Course
+// =====================================================
+// UPDATE COURSE
+// =====================================================
+
 func UpdateCourse(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
@@ -211,7 +411,7 @@ func UpdateCourse(w http.ResponseWriter, r *http.Request) {
 
 	id, err := strconv.Atoi(params["id"])
 
-	if err != nil {
+	if err != nil || id <= 0 {
 		http.Error(
 			w,
 			"Invalid Course ID",
@@ -270,7 +470,8 @@ func UpdateCourse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = Database.DB.Exec(
+	// Update Course
+	result, err := Database.DB.Exec(
 		context.Background(),
 		`UPDATE courses
 		SET
@@ -290,7 +491,12 @@ func UpdateCourse(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 
-		if strings.Contains(strings.ToLower(err.Error()), "unique") {
+		fmt.Println("UPDATE COURSE ERROR:", err)
+
+		if strings.Contains(
+			strings.ToLower(err.Error()),
+			"unique",
+		) {
 			http.Error(
 				w,
 				"Course Code already exists",
@@ -307,12 +513,27 @@ func UpdateCourse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Check whether course exists
+	rowsAffected := result.RowsAffected()
+
+	if rowsAffected == 0 {
+		http.Error(
+			w,
+			"Course Not Found",
+			http.StatusNotFound,
+		)
+		return
+	}
+
 	json.NewEncoder(w).Encode(map[string]string{
 		"message": "Course Updated Successfully",
 	})
 }
 
-// Delete Course
+// =====================================================
+// DELETE COURSE
+// =====================================================
+
 func DeleteCourse(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
@@ -321,7 +542,7 @@ func DeleteCourse(w http.ResponseWriter, r *http.Request) {
 
 	id, err := strconv.Atoi(params["id"])
 
-	if err != nil {
+	if err != nil || id <= 0 {
 		http.Error(
 			w,
 			"Invalid Course ID",
@@ -330,17 +551,42 @@ func DeleteCourse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = Database.DB.Exec(
+	result, err := Database.DB.Exec(
 		context.Background(),
 		"DELETE FROM courses WHERE id=$1",
 		id,
 	)
 
 	if err != nil {
+
+		fmt.Println("DELETE COURSE ERROR:", err)
+
+		// Course may be referenced by admissions
+		if strings.Contains(
+			strings.ToLower(err.Error()),
+			"foreign key",
+		) {
+			http.Error(
+				w,
+				"Cannot delete course because admissions exist for this course",
+				http.StatusConflict,
+			)
+			return
+		}
+
 		http.Error(
 			w,
 			err.Error(),
 			http.StatusInternalServerError,
+		)
+		return
+	}
+
+	if result.RowsAffected() == 0 {
+		http.Error(
+			w,
+			"Course Not Found",
+			http.StatusNotFound,
 		)
 		return
 	}

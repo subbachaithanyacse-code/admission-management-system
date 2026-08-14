@@ -75,7 +75,11 @@ func CreateStudent(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&student)
 
 	if err != nil {
-		http.Error(w, "Invalid JSON data", http.StatusBadRequest)
+		http.Error(
+			w,
+			"Invalid JSON data",
+			http.StatusBadRequest,
+		)
 		return
 	}
 
@@ -87,7 +91,11 @@ func CreateStudent(w http.ResponseWriter, r *http.Request) {
 
 	// Validate
 	if message := validateStudent(student); message != "" {
-		http.Error(w, message, http.StatusBadRequest)
+		http.Error(
+			w,
+			message,
+			http.StatusBadRequest,
+		)
 		return
 	}
 
@@ -155,21 +163,122 @@ func CreateStudent(w http.ResponseWriter, r *http.Request) {
 }
 
 // =====================================================
-// GET ALL STUDENTS
+// GET ALL STUDENTS - PAGINATION
 // =====================================================
 
 func GetStudents(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
+	// -------------------------------------------------
+	// Default pagination
+	// -------------------------------------------------
+
+	page := 1
+	limit := 10
+
+	// -------------------------------------------------
+	// Read page parameter
+	// Example:
+	// /students?page=2
+	// -------------------------------------------------
+
+	if pageValue := r.URL.Query().Get("page"); pageValue != "" {
+
+		value, err := strconv.Atoi(pageValue)
+
+		if err != nil || value <= 0 {
+			http.Error(
+				w,
+				"Invalid page number",
+				http.StatusBadRequest,
+			)
+			return
+		}
+
+		page = value
+	}
+
+	// -------------------------------------------------
+	// Read limit parameter
+	// Example:
+	// /students?limit=20
+	// -------------------------------------------------
+
+	if limitValue := r.URL.Query().Get("limit"); limitValue != "" {
+
+		value, err := strconv.Atoi(limitValue)
+
+		if err != nil || value <= 0 {
+			http.Error(
+				w,
+				"Invalid limit",
+				http.StatusBadRequest,
+			)
+			return
+		}
+
+		limit = value
+	}
+
+	// -------------------------------------------------
+	// Maximum API response limit
+	// -------------------------------------------------
+
+	if limit > 100 {
+		http.Error(
+			w,
+			"Maximum limit is 100 records per request",
+			http.StatusBadRequest,
+		)
+		return
+	}
+
+	// -------------------------------------------------
+	// Calculate OFFSET
+	// -------------------------------------------------
+
+	offset := (page - 1) * limit
+
+	// -------------------------------------------------
+	// Get total student count
+	// -------------------------------------------------
+
+	var totalStudents int
+
+	err := Database.DB.QueryRow(
+		context.Background(),
+		"SELECT COUNT(*) FROM students",
+	).Scan(&totalStudents)
+
+	if err != nil {
+
+		fmt.Println("COUNT ERROR:", err)
+
+		http.Error(
+			w,
+			"Failed to count students",
+			http.StatusInternalServerError,
+		)
+		return
+	}
+
+	// -------------------------------------------------
+	// Get paginated students
+	// -------------------------------------------------
+
 	rows, err := Database.DB.Query(
 		context.Background(),
 		`SELECT id, fullname, email, phone, course
 		 FROM students
-		 ORDER BY id`,
+		 ORDER BY id
+		 LIMIT $1 OFFSET $2`,
+		limit,
+		offset,
 	)
 
 	if err != nil {
+
 		fmt.Println("QUERY ERROR:", err)
 
 		http.Error(
@@ -211,6 +320,10 @@ func GetStudents(w http.ResponseWriter, r *http.Request) {
 		students = append(students, student)
 	}
 
+	// -------------------------------------------------
+	// Check rows error
+	// -------------------------------------------------
+
 	if err := rows.Err(); err != nil {
 
 		fmt.Println("ROWS ERROR:", err)
@@ -222,6 +335,44 @@ func GetStudents(w http.ResponseWriter, r *http.Request) {
 		)
 		return
 	}
+
+	// -------------------------------------------------
+	// Calculate total pages
+	// -------------------------------------------------
+
+	totalPages := 0
+
+	if totalStudents > 0 {
+		totalPages = (totalStudents + limit - 1) / limit
+	}
+
+	// -------------------------------------------------
+	// Pagination response headers
+	// -------------------------------------------------
+
+	w.Header().Set(
+		"X-Total-Count",
+		strconv.Itoa(totalStudents),
+	)
+
+	w.Header().Set(
+		"X-Page",
+		strconv.Itoa(page),
+	)
+
+	w.Header().Set(
+		"X-Limit",
+		strconv.Itoa(limit),
+	)
+
+	w.Header().Set(
+		"X-Total-Pages",
+		strconv.Itoa(totalPages),
+	)
+
+	// -------------------------------------------------
+	// Return students
+	// -------------------------------------------------
 
 	json.NewEncoder(w).Encode(students)
 }
@@ -239,7 +390,11 @@ func GetStudentByID(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(params["id"])
 
 	if err != nil || id <= 0 {
-		http.Error(w, "Invalid student ID", http.StatusBadRequest)
+		http.Error(
+			w,
+			"Invalid student ID",
+			http.StatusBadRequest,
+		)
 		return
 	}
 
@@ -287,7 +442,11 @@ func UpdateStudent(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(params["id"])
 
 	if err != nil || id <= 0 {
-		http.Error(w, "Invalid student ID", http.StatusBadRequest)
+		http.Error(
+			w,
+			"Invalid student ID",
+			http.StatusBadRequest,
+		)
 		return
 	}
 
@@ -296,7 +455,11 @@ func UpdateStudent(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(r.Body).Decode(&student)
 
 	if err != nil {
-		http.Error(w, "Invalid JSON data", http.StatusBadRequest)
+		http.Error(
+			w,
+			"Invalid JSON data",
+			http.StatusBadRequest,
+		)
 		return
 	}
 
@@ -308,7 +471,11 @@ func UpdateStudent(w http.ResponseWriter, r *http.Request) {
 
 	// Validate
 	if message := validateStudent(student); message != "" {
-		http.Error(w, message, http.StatusBadRequest)
+		http.Error(
+			w,
+			message,
+			http.StatusBadRequest,
+		)
 		return
 	}
 
@@ -399,7 +566,11 @@ func DeleteStudent(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(params["id"])
 
 	if err != nil || id <= 0 {
-		http.Error(w, "Invalid student ID", http.StatusBadRequest)
+		http.Error(
+			w,
+			"Invalid student ID",
+			http.StatusBadRequest,
+		)
 		return
 	}
 

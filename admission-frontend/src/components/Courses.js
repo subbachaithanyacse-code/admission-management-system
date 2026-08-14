@@ -3,15 +3,15 @@ import React, { useEffect, useState } from "react";
 function Courses() {
   const API = "http://localhost:8086";
 
-  // ================================
-  // DATA
-  // ================================
+  // =========================================
+  // COURSE DATA
+  // =========================================
 
   const [courses, setCourses] = useState([]);
 
-  // ================================
+  // =========================================
   // PAGINATION
-  // ================================
+  // =========================================
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -19,19 +19,20 @@ function Courses() {
   const [totalRecords, setTotalRecords] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
 
-  // ================================
+  // =========================================
   // LOADING / MESSAGE
-  // ================================
+  // =========================================
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
 
-  // ================================
+  // =========================================
   // FORM
-  // ================================
+  // =========================================
 
   const [showForm, setShowForm] = useState(false);
+
   const [editingId, setEditingId] = useState(null);
 
   const [formData, setFormData] = useState({
@@ -42,9 +43,9 @@ function Courses() {
     seats: "",
   });
 
-  // ================================
+  // =========================================
   // LOAD COURSES
-  // ================================
+  // =========================================
 
   useEffect(() => {
     getCourses();
@@ -66,70 +67,29 @@ function Courses() {
 
       const data = await response.json();
 
-      console.log("COURSES:", data);
-
       setCourses(Array.isArray(data) ? data : []);
 
-      // ================================
-      // PAGINATION HEADERS
-      // ================================
+      // Read pagination headers
 
-      const totalCountHeader =
+      const totalCount =
         response.headers.get("X-Total-Count");
 
-      const totalPagesHeader =
+      const pages =
         response.headers.get("X-Total-Pages");
 
-      console.log(
-        "X-Total-Count:",
-        totalCountHeader
+      setTotalRecords(
+        totalCount ? Number(totalCount) : 0
       );
 
-      console.log(
-        "X-Total-Pages:",
-        totalPagesHeader
+      setTotalPages(
+        pages ? Number(pages) : 0
       );
-
-      let calculatedTotal = totalCountHeader
-        ? Number(totalCountHeader)
-        : 0;
-
-      let calculatedPages = totalPagesHeader
-        ? Number(totalPagesHeader)
-        : 0;
-
-      // ================================
-      // FALLBACK
-      // ================================
-      // If headers are not exposed by CORS,
-      // calculate from current data.
-
-      if (calculatedTotal === 0) {
-        if (page === 1 && data.length < limit) {
-          calculatedTotal = data.length;
-        }
-      }
-
-      if (calculatedPages === 0) {
-        if (data.length > 0) {
-          calculatedPages = Math.ceil(
-            calculatedTotal / limit
-          );
-        }
-      }
-
-      setTotalRecords(calculatedTotal);
-      setTotalPages(calculatedPages);
 
     } catch (error) {
-      console.error(
-        "Courses Error:",
-        error
-      );
+      console.error("Courses Error:", error);
 
       setMessage(
-        "Unable to load courses: " +
-          error.message
+        "Unable to load courses: " + error.message
       );
 
       setMessageType("error");
@@ -141,22 +101,22 @@ function Courses() {
     }
   };
 
-  // ================================
-  // FORM CHANGE
-  // ================================
+  // =========================================
+  // FORM INPUT
+  // =========================================
 
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    setFormData((previous) => ({
-      ...previous,
+    setFormData({
+      ...formData,
       [name]: value,
-    }));
+    });
   };
 
-  // ================================
+  // =========================================
   // RESET FORM
-  // ================================
+  // =========================================
 
   const resetForm = () => {
     setFormData({
@@ -171,9 +131,9 @@ function Courses() {
     setShowForm(false);
   };
 
-  // ================================
+  // =========================================
   // OPEN ADD FORM
-  // ================================
+  // =========================================
 
   const openAddForm = () => {
     setFormData({
@@ -189,26 +149,17 @@ function Courses() {
     setShowForm(true);
   };
 
-  // ================================
-  // EDIT
-  // ================================
+  // =========================================
+  // EDIT COURSE
+  // =========================================
 
   const editCourse = (course) => {
     setFormData({
-      course_code:
-        course.course_code || "",
-
-      course_name:
-        course.course_name || "",
-
-      duration:
-        course.duration || "",
-
-      fee:
-        course.fee ?? "",
-
-      seats:
-        course.seats ?? "",
+      course_code: course.course_code || "",
+      course_name: course.course_name || "",
+      duration: course.duration || "",
+      fee: course.fee ?? "",
+      seats: course.seats ?? "",
     });
 
     setEditingId(course.id);
@@ -216,38 +167,20 @@ function Courses() {
     setShowForm(true);
   };
 
-  // ================================
-  // VALIDATION
-  // ================================
+  // =========================================
+  // VALIDATE FORM
+  // =========================================
 
   const validateForm = () => {
     if (!formData.course_code.trim()) {
-      setMessage(
-        "Course Code is required"
-      );
-
+      setMessage("Course Code is required");
       setMessageType("error");
-
       return false;
     }
 
     if (!formData.course_name.trim()) {
-      setMessage(
-        "Course Name is required"
-      );
-
+      setMessage("Course Name is required");
       setMessageType("error");
-
-      return false;
-    }
-
-    if (!formData.duration.trim()) {
-      setMessage(
-        "Duration is required"
-      );
-
-      setMessageType("error");
-
       return false;
     }
 
@@ -255,12 +188,8 @@ function Courses() {
       formData.fee === "" ||
       Number(formData.fee) < 0
     ) {
-      setMessage(
-        "Fee cannot be negative"
-      );
-
+      setMessage("Fee cannot be negative");
       setMessageType("error");
-
       return false;
     }
 
@@ -268,21 +197,17 @@ function Courses() {
       formData.seats === "" ||
       Number(formData.seats) < 0
     ) {
-      setMessage(
-        "Seats cannot be negative"
-      );
-
+      setMessage("Seats cannot be negative");
       setMessageType("error");
-
       return false;
     }
 
     return true;
   };
 
-  // ================================
-  // ADD / UPDATE
-  // ================================
+  // =========================================
+  // ADD / UPDATE COURSE
+  // =========================================
 
   const saveCourse = async (e) => {
     e.preventDefault();
@@ -296,24 +221,17 @@ function Courses() {
       setMessage("");
 
       const payload = {
-        course_code:
-          formData.course_code.trim(),
-
-        course_name:
-          formData.course_name.trim(),
-
-        duration:
-          formData.duration.trim(),
-
-        fee:
-          Number(formData.fee),
-
-        seats:
-          Number(formData.seats),
+        course_code: formData.course_code.trim(),
+        course_name: formData.course_name.trim(),
+        duration: formData.duration.trim(),
+        fee: Number(formData.fee),
+        seats: Number(formData.seats),
       };
 
       let url = `${API}/courses`;
       let method = "POST";
+
+      // UPDATE
 
       if (editingId !== null) {
         url = `${API}/courses/${editingId}`;
@@ -321,18 +239,16 @@ function Courses() {
       }
 
       const response = await fetch(url, {
-        method,
+        method: method,
 
         headers: {
-          "Content-Type":
-            "application/json",
+          "Content-Type": "application/json",
         },
 
         body: JSON.stringify(payload),
       });
 
-      const resultText =
-        await response.text();
+      const resultText = await response.text();
 
       if (!response.ok) {
         throw new Error(resultText);
@@ -351,14 +267,10 @@ function Courses() {
       await getCourses();
 
     } catch (error) {
-      console.error(
-        "Save Course Error:",
-        error
-      );
+      console.error("Save Course Error:", error);
 
       setMessage(
-        "Unable to save course: " +
-          error.message
+        "Unable to save course: " + error.message
       );
 
       setMessageType("error");
@@ -368,15 +280,14 @@ function Courses() {
     }
   };
 
-  // ================================
-  // DELETE
-  // ================================
+  // =========================================
+  // DELETE COURSE
+  // =========================================
 
   const deleteCourse = async (id) => {
-    const confirmDelete =
-      window.confirm(
-        "Are you sure you want to delete this course?"
-      );
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this course?"
+    );
 
     if (!confirmDelete) {
       return;
@@ -393,21 +304,18 @@ function Courses() {
         }
       );
 
-      const resultText =
-        await response.text();
+      const resultText = await response.text();
 
       if (!response.ok) {
         throw new Error(resultText);
       }
 
-      setMessage(
-        "Course Deleted Successfully"
-      );
-
+      setMessage("Course Deleted Successfully");
       setMessageType("success");
 
-      // If last record on current page
-      // and current page is greater than 1
+      // If deleting last item on current page,
+      // move to previous page.
+
       if (
         courses.length === 1 &&
         page > 1
@@ -418,14 +326,10 @@ function Courses() {
       }
 
     } catch (error) {
-      console.error(
-        "Delete Course Error:",
-        error
-      );
+      console.error("Delete Course Error:", error);
 
       setMessage(
-        "Unable to delete course: " +
-          error.message
+        "Unable to delete course: " + error.message
       );
 
       setMessageType("error");
@@ -435,51 +339,38 @@ function Courses() {
     }
   };
 
-  // ================================
-  // NEXT
-  // ================================
+  // =========================================
+  // NEXT PAGE
+  // =========================================
 
   const nextPage = () => {
-    if (
-      !loading &&
-      page < totalPages
-    ) {
-      setPage((previousPage) =>
-        previousPage + 1
-      );
+    if (page < totalPages) {
+      setPage(page + 1);
     }
   };
 
-  // ================================
-  // PREVIOUS
-  // ================================
+  // =========================================
+  // PREVIOUS PAGE
+  // =========================================
 
   const previousPage = () => {
-    if (
-      !loading &&
-      page > 1
-    ) {
-      setPage((previousPage) =>
-        previousPage - 1
-      );
+    if (page > 1) {
+      setPage(page - 1);
     }
   };
 
-  // ================================
-  // LIMIT
-  // ================================
+  // =========================================
+  // CHANGE LIMIT
+  // =========================================
 
   const changeLimit = (e) => {
-    const newLimit =
-      Number(e.target.value);
-
-    setLimit(newLimit);
+    setLimit(Number(e.target.value));
     setPage(1);
   };
 
-  // ================================
+  // =========================================
   // UI
-  // ================================
+  // =========================================
 
   return (
     <div
@@ -490,27 +381,30 @@ function Courses() {
       }}
     >
 
-      {/* HEADER */}
+      {/* =====================================
+          HEADER
+      ====================================== */}
 
       <div
         style={{
           display: "flex",
-          justifyContent:
-            "space-between",
+          justifyContent: "space-between",
           alignItems: "center",
           marginBottom: "25px",
           flexWrap: "wrap",
           gap: "15px",
         }}
       >
+
         <div>
+
           <h1
             style={{
               margin: 0,
               color: "#1f2937",
             }}
           >
-            Courses Management
+            Course Management
           </h1>
 
           <p
@@ -519,8 +413,9 @@ function Courses() {
               marginTop: "8px",
             }}
           >
-            Manage all courses
+            Manage courses and course details
           </p>
+
         </div>
 
         <div
@@ -529,9 +424,9 @@ function Courses() {
             gap: "10px",
           }}
         >
+
           <button
             onClick={getCourses}
-            disabled={loading}
             style={refreshButtonStyle}
           >
             🔄 Refresh
@@ -543,10 +438,14 @@ function Courses() {
           >
             ➕ Add Course
           </button>
+
         </div>
+
       </div>
 
-      {/* MESSAGE */}
+      {/* =====================================
+          MESSAGE
+      ====================================== */}
 
       {message && (
         <div
@@ -562,8 +461,11 @@ function Courses() {
                 : "#991b1b",
 
             padding: "12px 16px",
+
             borderRadius: "6px",
+
             marginBottom: "20px",
+
             fontWeight: "600",
           }}
         >
@@ -571,9 +473,12 @@ function Courses() {
         </div>
       )}
 
-      {/* FORM */}
+      {/* =====================================
+          ADD / EDIT FORM
+      ====================================== */}
 
       {showForm && (
+
         <div
           style={{
             backgroundColor: "white",
@@ -584,6 +489,7 @@ function Courses() {
               "0 2px 8px rgba(0,0,0,0.08)",
           }}
         >
+
           <h2
             style={{
               marginTop: 0,
@@ -592,7 +498,7 @@ function Courses() {
           >
             {editingId !== null
               ? "✏️ Edit Course"
-              : "➕ Add New Course"}
+              : "➕ Add Course"}
           </h2>
 
           <form onSubmit={saveCourse}>
@@ -606,6 +512,8 @@ function Courses() {
               }}
             >
 
+              {/* COURSE CODE */}
+
               <div>
                 <label style={labelStyle}>
                   Course Code *
@@ -614,14 +522,14 @@ function Courses() {
                 <input
                   type="text"
                   name="course_code"
-                  value={
-                    formData.course_code
-                  }
+                  value={formData.course_code}
                   onChange={handleChange}
                   placeholder="Example: CSE-01"
                   style={inputStyle}
                 />
               </div>
+
+              {/* COURSE NAME */}
 
               <div>
                 <label style={labelStyle}>
@@ -631,31 +539,31 @@ function Courses() {
                 <input
                   type="text"
                   name="course_name"
-                  value={
-                    formData.course_name
-                  }
+                  value={formData.course_name}
                   onChange={handleChange}
                   placeholder="Example: B.Tech CSE"
                   style={inputStyle}
                 />
               </div>
 
+              {/* DURATION */}
+
               <div>
                 <label style={labelStyle}>
-                  Duration *
+                  Duration
                 </label>
 
                 <input
                   type="text"
                   name="duration"
-                  value={
-                    formData.duration
-                  }
+                  value={formData.duration}
                   onChange={handleChange}
                   placeholder="Example: 4 Years"
                   style={inputStyle}
                 />
               </div>
+
+              {/* FEE */}
 
               <div>
                 <label style={labelStyle}>
@@ -672,6 +580,8 @@ function Courses() {
                   style={inputStyle}
                 />
               </div>
+
+              {/* SEATS */}
 
               <div>
                 <label style={labelStyle}>
@@ -691,6 +601,8 @@ function Courses() {
 
             </div>
 
+            {/* FORM BUTTONS */}
+
             <div
               style={{
                 display: "flex",
@@ -698,6 +610,7 @@ function Courses() {
                 marginTop: "20px",
               }}
             >
+
               <button
                 type="submit"
                 disabled={loading}
@@ -717,13 +630,17 @@ function Courses() {
               >
                 Cancel
               </button>
+
             </div>
 
           </form>
+
         </div>
       )}
 
-      {/* SUMMARY */}
+      {/* =====================================
+          SUMMARY
+      ====================================== */}
 
       <div
         style={{
@@ -735,11 +652,11 @@ function Courses() {
             "0 2px 8px rgba(0,0,0,0.08)",
         }}
       >
+
         <div
           style={{
             display: "flex",
-            justifyContent:
-              "space-between",
+            justifyContent: "space-between",
             alignItems: "center",
             flexWrap: "wrap",
             gap: "15px",
@@ -757,10 +674,9 @@ function Courses() {
           </div>
 
           <div>
+
             <label>
-              <b>
-                Records per page:
-              </b>{" "}
+              <b>Records per page:</b>{" "}
             </label>
 
             <select
@@ -789,12 +705,16 @@ function Courses() {
                 100
               </option>
             </select>
+
           </div>
 
         </div>
+
       </div>
 
-      {/* TABLE */}
+      {/* =====================================
+          COURSE TABLE
+      ====================================== */}
 
       <div
         style={{
@@ -812,10 +732,11 @@ function Courses() {
             color: "#1f2937",
           }}
         >
-          📚 All Courses
+          📚 Courses
         </h2>
 
         {loading ? (
+
           <div
             style={{
               textAlign: "center",
@@ -825,12 +746,15 @@ function Courses() {
           >
             Loading courses...
           </div>
+
         ) : (
+
           <div
             style={{
               overflowX: "auto",
             }}
           >
+
             <table
               style={{
                 width: "100%",
@@ -841,6 +765,7 @@ function Courses() {
             >
 
               <thead>
+
                 <tr
                   style={{
                     backgroundColor:
@@ -848,143 +773,217 @@ function Courses() {
                     color: "white",
                   }}
                 >
-                  <th style={tableHeaderStyle}>
+
+                  <th
+                    style={tableHeaderStyle}
+                  >
                     ID
                   </th>
 
-                  <th style={tableHeaderStyle}>
+                  <th
+                    style={tableHeaderStyle}
+                  >
                     Course Code
                   </th>
 
-                  <th style={tableHeaderStyle}>
+                  <th
+                    style={tableHeaderStyle}
+                  >
                     Course Name
                   </th>
 
-                  <th style={tableHeaderStyle}>
+                  <th
+                    style={tableHeaderStyle}
+                  >
                     Duration
                   </th>
 
-                  <th style={tableHeaderStyle}>
+                  <th
+                    style={tableHeaderStyle}
+                  >
                     Fee
                   </th>
 
-                  <th style={tableHeaderStyle}>
+                  <th
+                    style={tableHeaderStyle}
+                  >
                     Seats
                   </th>
 
-                  <th style={tableHeaderStyle}>
+                  <th
+                    style={tableHeaderStyle}
+                  >
                     Actions
                   </th>
+
                 </tr>
+
               </thead>
 
               <tbody>
 
                 {courses.length > 0 ? (
-                  courses.map((course) => (
-                    <tr
-                      key={course.id}
-                      style={{
-                        borderBottom:
-                          "1px solid #e5e7eb",
-                      }}
-                    >
 
-                      <td style={tableCellStyle}>
-                        {course.id}
-                      </td>
+                  courses.map(
+                    (course) => (
 
-                      <td style={tableCellStyle}>
-                        <b>
-                          {course.course_code}
-                        </b>
-                      </td>
+                      <tr
+                        key={course.id}
+                        style={{
+                          borderBottom:
+                            "1px solid #e5e7eb",
+                        }}
+                      >
 
-                      <td style={tableCellStyle}>
-                        {course.course_name}
-                      </td>
+                        <td
+                          style={
+                            tableCellStyle
+                          }
+                        >
+                          {course.id}
+                        </td>
 
-                      <td style={tableCellStyle}>
-                        {course.duration}
-                      </td>
+                        <td
+                          style={
+                            tableCellStyle
+                          }
+                        >
+                          <b>
+                            {
+                              course.course_code
+                            }
+                          </b>
+                        </td>
 
-                      <td style={tableCellStyle}>
-                        ₹
-                        {Number(
-                          course.fee
-                        ).toLocaleString(
-                          "en-IN"
-                        )}
-                      </td>
+                        <td
+                          style={
+                            tableCellStyle
+                          }
+                        >
+                          {
+                            course.course_name
+                          }
+                        </td>
 
-                      <td style={tableCellStyle}>
-                        {course.seats}
-                      </td>
+                        <td
+                          style={
+                            tableCellStyle
+                          }
+                        >
+                          {
+                            course.duration
+                          }
+                        </td>
 
-                      <td style={tableCellStyle}>
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: "8px",
-                          }}
+                        <td
+                          style={
+                            tableCellStyle
+                          }
+                        >
+                          ₹
+                          {Number(
+                            course.fee
+                          ).toLocaleString(
+                            "en-IN"
+                          )}
+                        </td>
+
+                        <td
+                          style={
+                            tableCellStyle
+                          }
+                        >
+                          {course.seats}
+                        </td>
+
+                        <td
+                          style={
+                            tableCellStyle
+                          }
                         >
 
-                          <button
-                            onClick={() =>
-                              editCourse(course)
-                            }
-                            style={
-                              editButtonStyle
-                            }
+                          <div
+                            style={{
+                              display:
+                                "flex",
+                              gap: "8px",
+                            }}
                           >
-                            ✏️ Edit
-                          </button>
 
-                          <button
-                            onClick={() =>
-                              deleteCourse(
-                                course.id
-                              )
-                            }
-                            style={
-                              deleteButtonStyle
-                            }
-                          >
-                            🗑️ Delete
-                          </button>
+                            <button
+                              onClick={() =>
+                                editCourse(
+                                  course
+                                )
+                              }
+                              style={
+                                editButtonStyle
+                              }
+                            >
+                              ✏️ Edit
+                            </button>
 
-                        </div>
-                      </td>
+                            <button
+                              onClick={() =>
+                                deleteCourse(
+                                  course.id
+                                )
+                              }
+                              style={
+                                deleteButtonStyle
+                              }
+                            >
+                              🗑️ Delete
+                            </button>
 
-                    </tr>
-                  ))
+                          </div>
+
+                        </td>
+
+                      </tr>
+
+                    )
+                  )
+
                 ) : (
+
                   <tr>
+
                     <td
                       colSpan="7"
                       style={{
                         textAlign:
                           "center",
-                        padding: "30px",
-                        color: "#777",
+                        padding:
+                          "30px",
+                        color:
+                          "#777",
                       }}
                     >
                       No courses found
                     </td>
+
                   </tr>
+
                 )}
 
               </tbody>
+
             </table>
+
           </div>
+
         )}
 
-        {/* PAGINATION */}
+        {/* =================================
+            PAGINATION
+        ================================== */}
 
         <div
           style={{
             display: "flex",
-            justifyContent: "center",
+            justifyContent:
+              "center",
             alignItems: "center",
             gap: "15px",
             marginTop: "25px",
@@ -993,13 +992,15 @@ function Courses() {
         >
 
           <button
-            onClick={previousPage}
+            onClick={
+              previousPage
+            }
             disabled={
-              page <= 1 ||
+              page === 1 ||
               loading
             }
             style={paginationButtonStyle(
-              page <= 1 ||
+              page === 1 ||
               loading
             )}
           >
@@ -1008,8 +1009,10 @@ function Courses() {
 
           <span
             style={{
-              fontWeight: "600",
-              color: "#374151",
+              fontWeight:
+                "600",
+              color:
+                "#374151",
             }}
           >
             Page {page} of{" "}
@@ -1019,12 +1022,14 @@ function Courses() {
           <button
             onClick={nextPage}
             disabled={
-              page >= totalPages ||
+              page ===
+                totalPages ||
               totalPages === 0 ||
               loading
             }
             style={paginationButtonStyle(
-              page >= totalPages ||
+              page ===
+                totalPages ||
               totalPages === 0 ||
               loading
             )}
@@ -1040,9 +1045,9 @@ function Courses() {
   );
 }
 
-// ================================
+// =========================================
 // STYLES
-// ================================
+// =========================================
 
 const labelStyle = {
   display: "block",
@@ -1132,25 +1137,17 @@ const deleteButtonStyle = {
   fontWeight: "600",
 };
 
-const paginationButtonStyle = (
-  disabled
-) => ({
+const paginationButtonStyle = (disabled) => ({
   backgroundColor: disabled
     ? "#d1d5db"
     : "#2563eb",
-
   color: "white",
-
   border: "none",
-
   padding: "10px 18px",
-
   borderRadius: "6px",
-
   cursor: disabled
     ? "not-allowed"
     : "pointer",
-
   fontWeight: "600",
 });
 

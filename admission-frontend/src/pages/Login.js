@@ -20,8 +20,6 @@ function Login() {
     try {
       setLoading(true);
 
-      console.log("Sending login request...");
-
       const response = await axios.post(
         "http://127.0.0.1:8086/login",
         {
@@ -37,12 +35,17 @@ function Login() {
 
       console.log("Login Response:", response.data);
 
-      if (response.data.message === "Login Successful") {
+      if (
+        response.data.message === "Login Successful" ||
+        response.data.message === "Login successful"
+      ) {
         localStorage.setItem("isLoggedIn", "true");
+
         localStorage.setItem(
           "username",
-          response.data.username || username
+          response.data.username || username.trim()
         );
+
         localStorage.setItem(
           "role",
           response.data.role || "admin"
@@ -75,12 +78,8 @@ function Login() {
           );
         }
       } else if (error.request) {
-        console.error(
-          "No response received from server"
-        );
-
         alert(
-          "Unable to connect to server. Check API Gateway."
+          "Unable to connect to server. Please make sure API Gateway is running on port 8086."
         );
       } else {
         alert("Login request failed.");
@@ -97,7 +96,8 @@ function Login() {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        background: "#f4f6f8",
+        background:
+          "linear-gradient(135deg, #1976d2, #42a5f5)",
       }}
     >
       <div
@@ -105,52 +105,68 @@ function Login() {
           width: "380px",
           padding: "35px",
           background: "#ffffff",
-          borderRadius: "10px",
-          boxShadow: "0 4px 15px rgba(0,0,0,0.15)",
+          borderRadius: "15px",
+          boxShadow: "0 8px 25px rgba(0,0,0,0.2)",
         }}
       >
-        <h2 style={{ textAlign: "center" }}>
+        <h2
+          style={{
+            textAlign: "center",
+            color: "#1976d2",
+            marginBottom: "8px",
+          }}
+        >
           Admission Management System
         </h2>
 
-        <h3 style={{ textAlign: "center" }}>
+        <h3
+          style={{
+            textAlign: "center",
+            color: "#555",
+            marginBottom: "25px",
+          }}
+        >
           Admin Login
         </h3>
 
         <form onSubmit={handleLogin}>
+          <label>Username</label>
+
           <input
             type="text"
-            placeholder="Username"
+            placeholder="Enter username"
             value={username}
-            onChange={(e) =>
-              setUsername(e.target.value)
-            }
+            onChange={(e) => setUsername(e.target.value)}
             required
             style={{
               width: "100%",
               padding: "12px",
-              marginTop: "15px",
+              marginTop: "8px",
+              marginBottom: "15px",
               boxSizing: "border-box",
               border: "1px solid #ccc",
-              borderRadius: "5px",
+              borderRadius: "7px",
+              fontSize: "15px",
             }}
           />
 
+          <label>Password</label>
+
           <input
             type="password"
-            placeholder="Password"
+            placeholder="Enter password"
             value={password}
-            onChange={(e) =>
-              setPassword(e.target.value)
-            }
+            onChange={(e) => setPassword(e.target.value)}
             required
             style={{
               width: "100%",
               padding: "12px",
-              marginTop: "15px",
+              marginTop: "8px",
+              marginBottom: "20px",
               boxSizing: "border-box",
               border: "1px solid #ccc",
-              borderRadius: "5px",
+              borderRadius: "7px",
+              fontSize: "15px",
             }}
           />
 
@@ -159,14 +175,15 @@ function Login() {
             disabled={loading}
             style={{
               width: "100%",
-              padding: "12px",
-              marginTop: "20px",
-              background: loading
+              padding: "13px",
+              backgroundColor: loading
                 ? "#999"
                 : "#1976d2",
               color: "white",
               border: "none",
-              borderRadius: "5px",
+              borderRadius: "7px",
+              fontSize: "16px",
+              fontWeight: "bold",
               cursor: loading
                 ? "not-allowed"
                 : "pointer",
@@ -181,9 +198,10 @@ function Login() {
             textAlign: "center",
             color: "#777",
             marginTop: "20px",
+            fontSize: "14px",
           }}
         >
-          Username: admin
+          Default Username: <b>admin</b>
         </p>
       </div>
     </div>

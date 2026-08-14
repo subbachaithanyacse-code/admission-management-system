@@ -1,268 +1,297 @@
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 
 function Admissions() {
-  const API = "http://127.0.0.1:8086";
+  const API = "http://localhost:8086";
 
+  // ================================
+  // DATA
+  // ================================
   const [admissions, setAdmissions] = useState([]);
   const [students, setStudents] = useState([]);
   const [courses, setCourses] = useState([]);
 
-  const [form, setForm] = useState({
+  // ================================
+  // PAGINATION
+  // ================================
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
+  // ================================
+  // LOADING / MESSAGE
+  // ================================
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("");
+
+  // ================================
+  // FORM
+  // ================================
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+
+  const [formData, setFormData] = useState({
     student_id: "",
     course_id: "",
     admission_date: "",
     status: "Pending",
   });
 
-  const [editing, setEditing] = useState(false);
-  const [editId, setEditId] = useState(null);
-
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All");
-
-  const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  // =========================
+  // ================================
   // LOAD ALL DATA
-  // =========================
+  // ================================
   useEffect(() => {
-    loadAllData();
+    loadStudents();
+    loadCourses();
   }, []);
 
-  const loadAllData = async () => {
-    await Promise.all([
-      getAdmissions(),
-      getStudents(),
-      getCourses(),
-    ]);
-  };
+  // ================================
+  // LOAD ADMISSIONS
+  // ================================
+  useEffect(() => {
+    loadAdmissions();
+  }, [page, limit]);
 
-  // =========================
+  // ================================
   // GET ADMISSIONS
-  // =========================
-  const getAdmissions = async () => {
+  // ================================
+  const loadAdmissions = async () => {
     try {
-      const response = await fetch(`${API}/admissions`);
+      setLoading(true);
+      setMessage("");
 
-      if (!response.ok) {
-        throw new Error("Failed to load admissions");
+      const response = await axios.get(
+        `${API}/admissions?page=${page}&limit=${limit}`
+      );
+
+      console.log("ADMISSIONS:", response.data);
+      console.log("HEADERS:", response.headers);
+
+      const data = Array.isArray(response.data)
+        ? response.data
+        : response.data.admissions ||
+          response.data.data ||
+          [];
+
+      setAdmissions(data);
+
+      // --------------------------------
+      // PAGINATION HEADERS
+      // --------------------------------
+
+      const totalCount =
+        response.headers["x-total-count"];
+
+      const pages =
+        response.headers["x-total-pages"];
+
+      if (totalCount) {
+        setTotalRecords(Number(totalCount));
+      } else {
+        // fallback
+        setTotalRecords(data.length);
       }
 
-      const data = await response.json();
+      if (pages) {
+        setTotalPages(Number(pages));
+      } else {
+        const calculatedPages = Math.ceil(
+          Number(totalCount || data.length) / limit
+        );
 
-      setAdmissions(Array.isArray(data) ? data : []);
+        setTotalPages(calculatedPages);
+      }
     } catch (error) {
-      console.error("Admissions Error:", error);
-      setMessage("Error: Unable to load admissions");
+      console.error(
+        "Admissions Error:",
+        error
+      );
+
+      setMessage(
+        "Unable to load admissions: " +
+          (error.response?.data ||
+            error.message)
+      );
+
+      setMessageType("error");
+
+      setAdmissions([]);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // =========================
+  // ================================
   // GET STUDENTS
-  // =========================
-  const getStudents = async () => {
+  // ================================
+  const loadStudents = async () => {
     try {
-      const response = await fetch(`${API}/students`);
+      const response = await axios.get(
+        `${API}/students?page=1&limit=100`
+      );
 
-      if (!response.ok) {
-        throw new Error("Failed to load students");
-      }
+      console.log(
+        "STUDENTS:",
+        response.data
+      );
 
-      const data = await response.json();
+      const data = Array.isArray(response.data)
+        ? response.data
+        : response.data.students ||
+          response.data.data ||
+          [];
 
-      setStudents(Array.isArray(data) ? data : []);
+      setStudents(data);
     } catch (error) {
-      console.error("Students Error:", error);
+      console.error(
+        "Students Error:",
+        error
+      );
     }
   };
 
-  // =========================
+  // ================================
   // GET COURSES
-  // =========================
-  const getCourses = async () => {
+  // ================================
+  const loadCourses = async () => {
     try {
-      const response = await fetch(`${API}/courses`);
+      const response = await axios.get(
+        `${API}/courses?page=1&limit=100`
+      );
 
-      if (!response.ok) {
-        throw new Error("Failed to load courses");
-      }
+      console.log(
+        "COURSES:",
+        response.data
+      );
 
-      const data = await response.json();
+      const data = Array.isArray(response.data)
+        ? response.data
+        : response.data.courses ||
+          response.data.data ||
+          [];
 
-      setCourses(Array.isArray(data) ? data : []);
+      setCourses(data);
     } catch (error) {
-      console.error("Courses Error:", error);
+      console.error(
+        "Courses Error:",
+        error
+      );
     }
   };
 
-  // =========================
-  // INPUT CHANGE
-  // =========================
+  // ================================
+  // FORM CHANGE
+  // ================================
   const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
+    const { name, value } = e.target;
+
+    setFormData({
+      ...formData,
+      [name]: value,
     });
   };
 
-  // =========================
+  // ================================
   // RESET FORM
-  // =========================
+  // ================================
   const resetForm = () => {
-    setForm({
+    setFormData({
       student_id: "",
       course_id: "",
       admission_date: "",
       status: "Pending",
     });
 
-    setEditing(false);
-    setEditId(null);
-    setMessage("");
+    setEditingId(null);
+    setShowForm(false);
   };
 
-  // =========================
-  // ADD ADMISSION
-  // =========================
-  const addAdmission = async (e) => {
-    e.preventDefault();
+  // ================================
+  // OPEN ADD FORM
+  // ================================
+  const openAddForm = () => {
+    setFormData({
+      student_id: "",
+      course_id: "",
+      admission_date: "",
+      status: "Pending",
+    });
 
+    setEditingId(null);
     setMessage("");
-
-    if (
-      !form.student_id ||
-      !form.course_id ||
-      !form.admission_date ||
-      !form.status
-    ) {
-      setMessage("Error: Please fill all required fields.");
-      return;
-    }
-
-    const admissionData = {
-      student_id: Number(form.student_id),
-      course_id: Number(form.course_id),
-      admission_date: form.admission_date,
-      status: form.status,
-    };
-
-    try {
-      setLoading(true);
-
-      const response = await fetch(`${API}/admissions`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(admissionData),
-      });
-
-      const result = await response.text();
-
-      if (!response.ok) {
-        throw new Error(result || "Failed to add admission");
-      }
-
-      setMessage("Admission added successfully!");
-
-      resetForm();
-
-      await getAdmissions();
-    } catch (error) {
-      console.error("Add Admission Error:", error);
-      setMessage("Error: " + error.message);
-    } finally {
-      setLoading(false);
-    }
+    setShowForm(true);
   };
 
-  // =========================
-  // EDIT ADMISSION
-  // =========================
+  // ================================
+  // EDIT
+  // ================================
   const editAdmission = (admission) => {
-    setForm({
-      student_id: String(admission.student_id),
-      course_id: String(admission.course_id),
+    setFormData({
+      student_id: admission.student_id || "",
+      course_id: admission.course_id || "",
       admission_date: admission.admission_date
-        ? admission.admission_date.substring(0, 10)
+        ? admission.admission_date.substring(
+            0,
+            10
+          )
         : "",
       status: admission.status || "Pending",
     });
 
-    setEditId(admission.id);
-    setEditing(true);
+    setEditingId(admission.id);
+    setShowForm(true);
     setMessage("");
-
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
   };
 
-  // =========================
-  // UPDATE ADMISSION
-  // =========================
-  const updateAdmission = async (e) => {
+  // ================================
+  // VALIDATE
+  // ================================
+  const validateForm = () => {
+    if (!formData.student_id) {
+      setMessage(
+        "Please select a student"
+      );
+      setMessageType("error");
+      return false;
+    }
+
+    if (!formData.course_id) {
+      setMessage(
+        "Please select a course"
+      );
+      setMessageType("error");
+      return false;
+    }
+
+    if (!formData.admission_date) {
+      setMessage(
+        "Admission date is required"
+      );
+      setMessageType("error");
+      return false;
+    }
+
+    if (!formData.status) {
+      setMessage(
+        "Status is required"
+      );
+      setMessageType("error");
+      return false;
+    }
+
+    return true;
+  };
+
+  // ================================
+  // SAVE ADMISSION
+  // ================================
+  const saveAdmission = async (e) => {
     e.preventDefault();
 
-    setMessage("");
-
-    if (
-      !form.student_id ||
-      !form.course_id ||
-      !form.admission_date ||
-      !form.status
-    ) {
-      setMessage("Error: Please fill all required fields.");
-      return;
-    }
-
-    const admissionData = {
-      student_id: Number(form.student_id),
-      course_id: Number(form.course_id),
-      admission_date: form.admission_date,
-      status: form.status,
-    };
-
-    try {
-      setLoading(true);
-
-      const response = await fetch(
-        `${API}/admissions/${editId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(admissionData),
-        }
-      );
-
-      const result = await response.text();
-
-      if (!response.ok) {
-        throw new Error(result || "Failed to update admission");
-      }
-
-      setMessage("Admission updated successfully!");
-
-      resetForm();
-
-      await getAdmissions();
-    } catch (error) {
-      console.error("Update Admission Error:", error);
-      setMessage("Error: " + error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // =========================
-  // DELETE ADMISSION
-  // =========================
-  const deleteAdmission = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this admission?")) {
+    if (!validateForm()) {
       return;
     }
 
@@ -270,143 +299,198 @@ function Admissions() {
       setLoading(true);
       setMessage("");
 
-      const response = await fetch(
-        `${API}/admissions/${id}`,
-        {
-          method: "DELETE",
-        }
+      const payload = {
+        student_id: Number(
+          formData.student_id
+        ),
+        course_id: Number(
+          formData.course_id
+        ),
+        admission_date:
+          formData.admission_date,
+        status: formData.status,
+      };
+
+      console.log(
+        "ADMISSION PAYLOAD:",
+        payload
       );
 
-      const result = await response.text();
+      let response;
 
-      if (!response.ok) {
-        throw new Error(result || "Delete failed");
+      if (editingId !== null) {
+        response = await axios.put(
+          `${API}/admissions/${editingId}`,
+          payload,
+          {
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+          }
+        );
+      } else {
+        response = await axios.post(
+          `${API}/admissions`,
+          payload,
+          {
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+          }
+        );
       }
 
-      setMessage("Admission deleted successfully!");
+      console.log(
+        "SAVE RESPONSE:",
+        response.data
+      );
 
-      await getAdmissions();
+      setMessage(
+        editingId !== null
+          ? "Admission Updated Successfully"
+          : "Admission Added Successfully"
+      );
+
+      setMessageType("success");
+
+      resetForm();
+
+      await loadAdmissions();
     } catch (error) {
-      console.error("Delete Admission Error:", error);
-      setMessage("Error: " + error.message);
+      console.error(
+        "Save Admission Error:",
+        error
+      );
+
+      setMessage(
+        "Unable to save admission: " +
+          (error.response?.data ||
+            error.message)
+      );
+
+      setMessageType("error");
     } finally {
       setLoading(false);
     }
   };
 
-  // =========================
-  // FIND STUDENT NAME
-  // =========================
-  const getStudentName = (studentId) => {
+  // ================================
+  // DELETE
+  // ================================
+  const deleteAdmission = async (id) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this admission?"
+    );
+
+    if (!confirmDelete) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      await axios.delete(
+        `${API}/admissions/${id}`
+      );
+
+      setMessage(
+        "Admission Deleted Successfully"
+      );
+
+      setMessageType("success");
+
+      if (
+        admissions.length === 1 &&
+        page > 1
+      ) {
+        setPage(page - 1);
+      } else {
+        await loadAdmissions();
+      }
+    } catch (error) {
+      console.error(
+        "Delete Admission Error:",
+        error
+      );
+
+      setMessage(
+        "Unable to delete admission: " +
+          (error.response?.data ||
+            error.message)
+      );
+
+      setMessageType("error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ================================
+  // FIND STUDENT
+  // ================================
+  const getStudentName = (id) => {
     const student = students.find(
-      (item) => Number(item.id) === Number(studentId)
+      (s) => Number(s.id) === Number(id)
     );
 
     return student
       ? student.fullname
-      : `Student ID: ${studentId}`;
+      : `Student #${id}`;
   };
 
-  // =========================
-  // FIND COURSE NAME
-  // =========================
-  const getCourseName = (courseId) => {
+  // ================================
+  // FIND COURSE
+  // ================================
+  const getCourseName = (id) => {
     const course = courses.find(
-      (item) => Number(item.id) === Number(courseId)
+      (c) => Number(c.id) === Number(id)
     );
 
     return course
       ? course.course_name
-      : `Course ID: ${courseId}`;
+      : `Course #${id}`;
   };
 
-  // =========================
-  // STATUS STYLE
-  // =========================
-  const getStatusStyle = (status) => {
-    if (status === "Approved") {
-      return {
-        backgroundColor: "#dcfce7",
-        color: "#166534",
-        padding: "6px 12px",
-        borderRadius: "15px",
-        fontWeight: "bold",
-        display: "inline-block",
-      };
+  // ================================
+  // NEXT PAGE
+  // ================================
+  const nextPage = () => {
+    if (
+      page < totalPages &&
+      !loading
+    ) {
+      setPage(page + 1);
     }
-
-    if (status === "Rejected") {
-      return {
-        backgroundColor: "#fee2e2",
-        color: "#991b1b",
-        padding: "6px 12px",
-        borderRadius: "15px",
-        fontWeight: "bold",
-        display: "inline-block",
-      };
-    }
-
-    return {
-      backgroundColor: "#fef3c7",
-      color: "#92400e",
-      padding: "6px 12px",
-      borderRadius: "15px",
-      fontWeight: "bold",
-      display: "inline-block",
-    };
   };
 
-  // =========================
-  // SEARCH + FILTER
-  // =========================
-  const filteredAdmissions = admissions.filter((admission) => {
-    const studentName = getStudentName(
-      admission.student_id
-    ).toLowerCase();
+  // ================================
+  // PREVIOUS PAGE
+  // ================================
+  const previousPage = () => {
+    if (
+      page > 1 &&
+      !loading
+    ) {
+      setPage(page - 1);
+    }
+  };
 
-    const courseName = getCourseName(
-      admission.course_id
-    ).toLowerCase();
+  // ================================
+  // LIMIT
+  // ================================
+  const changeLimit = (e) => {
+    setLimit(
+      Number(e.target.value)
+    );
 
-    const searchText = search.toLowerCase();
+    setPage(1);
+  };
 
-    const matchesSearch =
-      String(admission.id).includes(searchText) ||
-      studentName.includes(searchText) ||
-      courseName.includes(searchText) ||
-      String(admission.student_id).includes(searchText) ||
-      String(admission.course_id).includes(searchText) ||
-      String(admission.status)
-        .toLowerCase()
-        .includes(searchText);
-
-    const matchesStatus =
-      statusFilter === "All" ||
-      admission.status === statusFilter;
-
-    return matchesSearch && matchesStatus;
-  });
-
-  // =========================
-  // COUNTS
-  // =========================
-  const totalAdmissions = admissions.length;
-
-  const approvedCount = admissions.filter(
-    (item) => item.status === "Approved"
-  ).length;
-
-  const pendingCount = admissions.filter(
-    (item) => item.status === "Pending"
-  ).length;
-
-  const rejectedCount = admissions.filter(
-    (item) => item.status === "Rejected"
-  ).length;
-
-  // =========================
+  // ================================
   // UI
-  // =========================
+  // ================================
   return (
     <div
       style={{
@@ -415,16 +499,18 @@ function Admissions() {
         minHeight: "100vh",
       }}
     >
-      {/* PAGE HEADER */}
+
+      {/* HEADER */}
 
       <div
         style={{
           display: "flex",
-          justifyContent: "space-between",
+          justifyContent:
+            "space-between",
           alignItems: "center",
           marginBottom: "25px",
-          gap: "15px",
           flexWrap: "wrap",
+          gap: "15px",
         }}
       >
         <div>
@@ -434,387 +520,345 @@ function Admissions() {
               color: "#1f2937",
             }}
           >
-            Admission Management
+            Admissions Management
           </h1>
 
           <p
             style={{
               color: "#6b7280",
-              marginTop: "8px",
             }}
           >
             Manage student admissions
           </p>
         </div>
 
-        <button
-          onClick={loadAllData}
+        <div
           style={{
-            backgroundColor: "#2563eb",
-            color: "white",
-            border: "none",
-            padding: "11px 20px",
-            borderRadius: "6px",
-            cursor: "pointer",
-            fontWeight: "600",
+            display: "flex",
+            gap: "10px",
           }}
         >
-          🔄 Refresh
-        </button>
+          <button
+            onClick={loadAdmissions}
+            style={refreshButtonStyle}
+          >
+            🔄 Refresh
+          </button>
+
+          <button
+            onClick={openAddForm}
+            style={addButtonStyle}
+          >
+            ➕ Add Admission
+          </button>
+        </div>
       </div>
 
-      {/* SUMMARY CARDS */}
+      {/* MESSAGE */}
+
+      {message && (
+        <div
+          style={{
+            padding: "12px 16px",
+            marginBottom: "20px",
+            borderRadius: "6px",
+            fontWeight: "600",
+            backgroundColor:
+              messageType === "success"
+                ? "#dcfce7"
+                : "#fee2e2",
+            color:
+              messageType === "success"
+                ? "#166534"
+                : "#991b1b",
+          }}
+        >
+          {message}
+        </div>
+      )}
+
+      {/* FORM */}
+
+      {showForm && (
+        <div
+          style={{
+            backgroundColor: "white",
+            padding: "25px",
+            borderRadius: "10px",
+            marginBottom: "25px",
+            boxShadow:
+              "0 2px 8px rgba(0,0,0,0.08)",
+          }}
+        >
+          <h2>
+            {editingId !== null
+              ? "✏️ Edit Admission"
+              : "➕ Add Admission"}
+          </h2>
+
+          <form onSubmit={saveAdmission}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns:
+                  "repeat(auto-fit,minmax(220px,1fr))",
+                gap: "15px",
+              }}
+            >
+
+              {/* STUDENT */}
+
+              <div>
+                <label style={labelStyle}>
+                  Student *
+                </label>
+
+                <select
+                  name="student_id"
+                  value={
+                    formData.student_id
+                  }
+                  onChange={handleChange}
+                  style={inputStyle}
+                >
+                  <option value="">
+                    Select Student
+                  </option>
+
+                  {students.map(
+                    (student) => (
+                      <option
+                        key={student.id}
+                        value={student.id}
+                      >
+                        {student.fullname}
+                      </option>
+                    )
+                  )}
+                </select>
+              </div>
+
+              {/* COURSE */}
+
+              <div>
+                <label style={labelStyle}>
+                  Course *
+                </label>
+
+                <select
+                  name="course_id"
+                  value={
+                    formData.course_id
+                  }
+                  onChange={handleChange}
+                  style={inputStyle}
+                >
+                  <option value="">
+                    Select Course
+                  </option>
+
+                  {courses.map(
+                    (course) => (
+                      <option
+                        key={course.id}
+                        value={course.id}
+                      >
+                        {course.course_name}{" "}
+                        ({course.course_code})
+                      </option>
+                    )
+                  )}
+                </select>
+              </div>
+
+              {/* DATE */}
+
+              <div>
+                <label style={labelStyle}>
+                  Admission Date *
+                </label>
+
+                <input
+                  type="date"
+                  name="admission_date"
+                  value={
+                    formData.admission_date
+                  }
+                  onChange={handleChange}
+                  style={inputStyle}
+                />
+              </div>
+
+              {/* STATUS */}
+
+              <div>
+                <label style={labelStyle}>
+                  Status *
+                </label>
+
+                <select
+                  name="status"
+                  value={
+                    formData.status
+                  }
+                  onChange={handleChange}
+                  style={inputStyle}
+                >
+                  <option value="Pending">
+                    Pending
+                  </option>
+
+                  <option value="Approved">
+                    Approved
+                  </option>
+
+                  <option value="Rejected">
+                    Rejected
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div
+              style={{
+                marginTop: "20px",
+                display: "flex",
+                gap: "10px",
+              }}
+            >
+              <button
+                type="submit"
+                disabled={loading}
+                style={saveButtonStyle}
+              >
+                {loading
+                  ? "Saving..."
+                  : editingId !== null
+                  ? "Update Admission"
+                  : "Add Admission"}
+              </button>
+
+              <button
+                type="button"
+                onClick={resetForm}
+                style={cancelButtonStyle}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* SUMMARY */}
 
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns:
-            "repeat(auto-fit, minmax(180px, 1fr))",
-          gap: "15px",
-          marginBottom: "25px",
+          backgroundColor: "white",
+          padding: "20px",
+          borderRadius: "10px",
+          marginBottom: "20px",
+          boxShadow:
+            "0 2px 8px rgba(0,0,0,0.08)",
         }}
       >
-        <div style={summaryCardStyle}>
-          <h3>Total Admissions</h3>
-          <strong>{totalAdmissions}</strong>
-        </div>
+        <div
+          style={{
+            display: "flex",
+            justifyContent:
+              "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "20px",
+          }}
+        >
+          <div>
+            <b>Total Admissions:</b>{" "}
+            {totalRecords}
+          </div>
 
-        <div style={summaryCardStyle}>
-          <h3>Approved</h3>
-          <strong style={{ color: "#16a34a" }}>
-            {approvedCount}
-          </strong>
-        </div>
+          <div>
+            <b>Page:</b>{" "}
+            {page} / {totalPages}
+          </div>
 
-        <div style={summaryCardStyle}>
-          <h3>Pending</h3>
-          <strong style={{ color: "#d97706" }}>
-            {pendingCount}
-          </strong>
-        </div>
+          <div>
+            <b>Records per page:</b>{" "}
 
-        <div style={summaryCardStyle}>
-          <h3>Rejected</h3>
-          <strong style={{ color: "#dc2626" }}>
-            {rejectedCount}
-          </strong>
+            <select
+              value={limit}
+              onChange={changeLimit}
+              style={{
+                padding: "8px",
+                marginLeft: "5px",
+                border:
+                  "1px solid #d1d5db",
+                borderRadius: "5px",
+              }}
+            >
+              <option value="10">
+                10
+              </option>
+
+              <option value="20">
+                20
+              </option>
+
+              <option value="50">
+                50
+              </option>
+
+              <option value="100">
+                100
+              </option>
+            </select>
+          </div>
         </div>
       </div>
 
-      {/* FORM */}
+      {/* TABLE */}
 
       <div
         style={{
           backgroundColor: "white",
           padding: "25px",
-          marginBottom: "25px",
           borderRadius: "10px",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+          boxShadow:
+            "0 2px 8px rgba(0,0,0,0.08)",
+          overflowX: "auto",
         }}
       >
         <h2
           style={{
             marginTop: 0,
-            color: "#1f2937",
           }}
         >
-          {editing
-            ? "✏️ Edit Admission"
-            : "➕ Add New Admission"}
+          🎓 All Admissions
         </h2>
 
-        {message && (
+        {loading ? (
           <div
             style={{
-              backgroundColor: message.startsWith("Error")
-                ? "#fee2e2"
-                : "#dcfce7",
-              color: message.startsWith("Error")
-                ? "#991b1b"
-                : "#166534",
-              padding: "12px",
-              borderRadius: "6px",
-              marginBottom: "18px",
-              fontWeight: "600",
+              textAlign: "center",
+              padding: "40px",
             }}
           >
-            {message}
+            Loading admissions...
           </div>
-        )}
-
-        <form
-          onSubmit={
-            editing ? updateAdmission : addAdmission
-          }
-          style={{
-            display: "grid",
-            gridTemplateColumns:
-              "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: "15px",
-          }}
-        >
-          {/* STUDENT */}
-
-          <div>
-            <label>
-              <b>Student</b>
-            </label>
-
-            <select
-              name="student_id"
-              value={form.student_id}
-              onChange={handleChange}
-              required
-              style={inputStyle}
-            >
-              <option value="">
-                -- Select Student --
-              </option>
-
-              {students.map((student) => (
-                <option
-                  key={student.id}
-                  value={student.id}
-                >
-                  {student.fullname} (ID: {student.id})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* COURSE */}
-
-          <div>
-            <label>
-              <b>Course</b>
-            </label>
-
-            <select
-              name="course_id"
-              value={form.course_id}
-              onChange={handleChange}
-              required
-              style={inputStyle}
-            >
-              <option value="">
-                -- Select Course --
-              </option>
-
-              {courses.map((course) => (
-                <option
-                  key={course.id}
-                  value={course.id}
-                >
-                  {course.course_name} (ID: {course.id})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* DATE */}
-
-          <div>
-            <label>
-              <b>Admission Date</b>
-            </label>
-
-            <input
-              type="date"
-              name="admission_date"
-              value={form.admission_date}
-              onChange={handleChange}
-              required
-              style={inputStyle}
-            />
-          </div>
-
-          {/* STATUS */}
-
-          <div>
-            <label>
-              <b>Status</b>
-            </label>
-
-            <select
-              name="status"
-              value={form.status}
-              onChange={handleChange}
-              required
-              style={inputStyle}
-            >
-              <option value="Pending">
-                Pending
-              </option>
-
-              <option value="Approved">
-                Approved
-              </option>
-
-              <option value="Rejected">
-                Rejected
-              </option>
-            </select>
-          </div>
-
-          {/* BUTTONS */}
-
-          <div
-            style={{
-              gridColumn: "1 / -1",
-              marginTop: "5px",
-            }}
-          >
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                backgroundColor: editing
-                  ? "#f59e0b"
-                  : "#16a34a",
-                color: "white",
-                border: "none",
-                padding: "12px 25px",
-                borderRadius: "6px",
-                cursor: "pointer",
-                fontWeight: "600",
-                marginRight: "10px",
-              }}
-            >
-              {loading
-                ? "Processing..."
-                : editing
-                ? "Update Admission"
-                : "Add Admission"}
-            </button>
-
-            {editing && (
-              <button
-                type="button"
-                onClick={resetForm}
-                style={{
-                  backgroundColor: "#6b7280",
-                  color: "white",
-                  border: "none",
-                  padding: "12px 25px",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                  fontWeight: "600",
-                }}
-              >
-                Cancel
-              </button>
-            )}
-          </div>
-        </form>
-      </div>
-
-      {/* ADMISSION LIST */}
-
-      <div
-        style={{
-          backgroundColor: "white",
-          padding: "25px",
-          borderRadius: "10px",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-        }}
-      >
-        {/* LIST HEADER */}
-
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "20px",
-            gap: "15px",
-            flexWrap: "wrap",
-          }}
-        >
-          <h2
-            style={{
-              margin: 0,
-              color: "#1f2937",
-            }}
-          >
-            📋 All Admissions ({filteredAdmissions.length})
-          </h2>
-
-          <div
-            style={{
-              display: "flex",
-              gap: "10px",
-              flexWrap: "wrap",
-            }}
-          >
-            {/* SEARCH */}
-
-            <input
-              type="text"
-              placeholder="🔍 Search..."
-              value={search}
-              onChange={(e) =>
-                setSearch(e.target.value)
-              }
-              style={{
-                padding: "11px 15px",
-                border: "1px solid #d1d5db",
-                borderRadius: "6px",
-                width: "240px",
-                outline: "none",
-              }}
-            />
-
-            {/* FILTER */}
-
-            <select
-              value={statusFilter}
-              onChange={(e) =>
-                setStatusFilter(e.target.value)
-              }
-              style={{
-                padding: "11px 15px",
-                border: "1px solid #d1d5db",
-                borderRadius: "6px",
-                outline: "none",
-              }}
-            >
-              <option value="All">
-                All Status
-              </option>
-
-              <option value="Pending">
-                Pending
-              </option>
-
-              <option value="Approved">
-                Approved
-              </option>
-
-              <option value="Rejected">
-                Rejected
-              </option>
-            </select>
-          </div>
-        </div>
-
-        {/* TABLE */}
-
-        <div
-          style={{
-            overflowX: "auto",
-          }}
-        >
+        ) : (
           <table
             style={{
               width: "100%",
-              borderCollapse: "collapse",
+              borderCollapse:
+                "collapse",
               minWidth: "900px",
             }}
           >
             <thead>
               <tr
                 style={{
-                  backgroundColor: "#2563eb",
+                  backgroundColor:
+                    "#2563eb",
                   color: "white",
                 }}
               >
@@ -845,8 +889,8 @@ function Admissions() {
             </thead>
 
             <tbody>
-              {filteredAdmissions.length > 0 ? (
-                filteredAdmissions.map(
+              {admissions.length > 0 ? (
+                admissions.map(
                   (admission) => (
                     <tr
                       key={admission.id}
@@ -855,116 +899,122 @@ function Admissions() {
                           "1px solid #e5e7eb",
                       }}
                     >
-                      {/* ID */}
-
-                      <td style={tableCellStyle}>
+                      <td
+                        style={
+                          tableCellStyle
+                        }
+                      >
                         {admission.id}
                       </td>
 
-                      {/* STUDENT */}
-
-                      <td style={tableCellStyle}>
-                        <strong>
+                      <td
+                        style={
+                          tableCellStyle
+                        }
+                      >
+                        <b>
                           {getStudentName(
                             admission.student_id
                           )}
-                        </strong>
-
-                        <div
-                          style={{
-                            fontSize: "12px",
-                            color: "#888",
-                            marginTop: "3px",
-                          }}
-                        >
-                          ID: {admission.student_id}
-                        </div>
+                        </b>
                       </td>
 
-                      {/* COURSE */}
-
-                      <td style={tableCellStyle}>
-                        <strong>
-                          {getCourseName(
-                            admission.course_id
-                          )}
-                        </strong>
-
-                        <div
-                          style={{
-                            fontSize: "12px",
-                            color: "#888",
-                            marginTop: "3px",
-                          }}
-                        >
-                          ID: {admission.course_id}
-                        </div>
+                      <td
+                        style={
+                          tableCellStyle
+                        }
+                      >
+                        {getCourseName(
+                          admission.course_id
+                        )}
                       </td>
 
-                      {/* DATE */}
-
-                      <td style={tableCellStyle}>
+                      <td
+                        style={
+                          tableCellStyle
+                        }
+                      >
                         {admission.admission_date
-                          ? admission.admission_date.substring(
-                              0,
-                              10
+                          ? new Date(
+                              admission.admission_date
+                            ).toLocaleDateString(
+                              "en-IN"
                             )
                           : "-"}
                       </td>
 
-                      {/* STATUS */}
-
-                      <td style={tableCellStyle}>
+                      <td
+                        style={
+                          tableCellStyle
+                        }
+                      >
                         <span
-                          style={getStatusStyle(
-                            admission.status
-                          )}
+                          style={{
+                            padding:
+                              "6px 10px",
+                            borderRadius:
+                              "20px",
+                            fontWeight:
+                              "600",
+                            backgroundColor:
+                              admission.status ===
+                              "Approved"
+                                ? "#dcfce7"
+                                : admission.status ===
+                                  "Rejected"
+                                ? "#fee2e2"
+                                : "#fef3c7",
+                            color:
+                              admission.status ===
+                              "Approved"
+                                ? "#166534"
+                                : admission.status ===
+                                  "Rejected"
+                                ? "#991b1b"
+                                : "#92400e",
+                          }}
                         >
                           {admission.status}
                         </span>
                       </td>
 
-                      {/* ACTIONS */}
-
-                      <td style={tableCellStyle}>
-                        <button
-                          onClick={() =>
-                            editAdmission(
-                              admission
-                            )
-                          }
+                      <td
+                        style={
+                          tableCellStyle
+                        }
+                      >
+                        <div
                           style={{
-                            backgroundColor:
-                              "#f59e0b",
-                            color: "white",
-                            border: "none",
-                            padding: "7px 13px",
-                            borderRadius: "5px",
-                            cursor: "pointer",
-                            marginRight: "8px",
+                            display: "flex",
+                            gap: "8px",
                           }}
                         >
-                          ✏️ Edit
-                        </button>
+                          <button
+                            onClick={() =>
+                              editAdmission(
+                                admission
+                              )
+                            }
+                            style={
+                              editButtonStyle
+                            }
+                          >
+                            ✏️ Edit
+                          </button>
 
-                        <button
-                          onClick={() =>
-                            deleteAdmission(
-                              admission.id
-                            )
-                          }
-                          style={{
-                            backgroundColor:
-                              "#dc2626",
-                            color: "white",
-                            border: "none",
-                            padding: "7px 13px",
-                            borderRadius: "5px",
-                            cursor: "pointer",
-                          }}
-                        >
-                          🗑️ Delete
-                        </button>
+                          <button
+                            onClick={() =>
+                              deleteAdmission(
+                                admission.id
+                              )
+                            }
+                            style={
+                              deleteButtonStyle
+                            }
+                          >
+                            🗑️ Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   )
@@ -974,42 +1024,97 @@ function Admissions() {
                   <td
                     colSpan="6"
                     style={{
-                      textAlign: "center",
-                      padding: "30px",
+                      textAlign:
+                        "center",
+                      padding: "40px",
                       color: "#777",
                     }}
                   >
-                    No Admissions Found
+                    No admissions found
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
+        )}
+
+        {/* PAGINATION */}
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent:
+              "center",
+            alignItems: "center",
+            gap: "15px",
+            marginTop: "25px",
+            flexWrap: "wrap",
+          }}
+        >
+          <button
+            onClick={previousPage}
+            disabled={
+              page === 1 ||
+              loading
+            }
+            style={paginationButtonStyle(
+              page === 1 ||
+                loading
+            )}
+          >
+            ◀ Previous
+          </button>
+
+          <span
+            style={{
+              fontWeight: "600",
+              color: "#374151",
+            }}
+          >
+            Page {page} of{" "}
+            {totalPages}
+          </span>
+
+          <button
+            onClick={nextPage}
+            disabled={
+              page >= totalPages ||
+              totalPages === 0 ||
+              loading
+            }
+            style={paginationButtonStyle(
+              page >= totalPages ||
+                totalPages === 0 ||
+                loading
+            )}
+          >
+            Next ▶
+          </button>
         </div>
       </div>
     </div>
   );
 }
 
-// =========================
+// ======================================
 // STYLES
-// =========================
+// ======================================
+
+const labelStyle = {
+  display: "block",
+  marginBottom: "6px",
+  fontWeight: "600",
+  color: "#374151",
+};
 
 const inputStyle = {
   width: "100%",
   boxSizing: "border-box",
-  padding: "11px",
-  marginTop: "7px",
-  border: "1px solid #d1d5db",
+  padding: "10px",
+  border:
+    "1px solid #d1d5db",
   borderRadius: "6px",
-  outline: "none",
-};
-
-const summaryCardStyle = {
-  backgroundColor: "white",
-  padding: "20px",
-  borderRadius: "10px",
-  boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+  fontSize: "14px",
 };
 
 const tableHeaderStyle = {
@@ -1023,5 +1128,81 @@ const tableCellStyle = {
   textAlign: "left",
   color: "#374151",
 };
+
+const refreshButtonStyle = {
+  backgroundColor: "#6b7280",
+  color: "white",
+  border: "none",
+  padding: "11px 18px",
+  borderRadius: "6px",
+  cursor: "pointer",
+  fontWeight: "600",
+};
+
+const addButtonStyle = {
+  backgroundColor: "#16a34a",
+  color: "white",
+  border: "none",
+  padding: "11px 18px",
+  borderRadius: "6px",
+  cursor: "pointer",
+  fontWeight: "600",
+};
+
+const saveButtonStyle = {
+  backgroundColor: "#2563eb",
+  color: "white",
+  border: "none",
+  padding: "10px 18px",
+  borderRadius: "6px",
+  cursor: "pointer",
+  fontWeight: "600",
+};
+
+const cancelButtonStyle = {
+  backgroundColor: "#6b7280",
+  color: "white",
+  border: "none",
+  padding: "10px 18px",
+  borderRadius: "6px",
+  cursor: "pointer",
+  fontWeight: "600",
+};
+
+const editButtonStyle = {
+  backgroundColor: "#f59e0b",
+  color: "white",
+  border: "none",
+  padding: "7px 12px",
+  borderRadius: "5px",
+  cursor: "pointer",
+  fontWeight: "600",
+};
+
+const deleteButtonStyle = {
+  backgroundColor: "#dc2626",
+  color: "white",
+  border: "none",
+  padding: "7px 12px",
+  borderRadius: "5px",
+  cursor: "pointer",
+  fontWeight: "600",
+};
+
+const paginationButtonStyle = (
+  disabled
+) => ({
+  backgroundColor: disabled
+    ? "#d1d5db"
+    : "#2563eb",
+  color: "white",
+  border: "none",
+  padding: "10px 18px",
+  borderRadius: "6px",
+  cursor: disabled
+    ? "not-allowed"
+    : "pointer",
+  fontWeight: "600",
+});
 
 export default Admissions;
