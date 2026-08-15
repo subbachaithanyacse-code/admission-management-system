@@ -42,15 +42,26 @@ func main() {
 	// HEALTH CHECK
 	// =========================
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/plain")
+
+		w.Header().Set(
+			"Content-Type",
+			"text/plain",
+		)
+
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("API Gateway Running Successfully"))
+
+		w.Write(
+			[]byte(
+				"API Gateway Running Successfully",
+			),
+		)
 	})
 
 	// =========================
 	// CORS
 	// =========================
 	c := cors.New(cors.Options{
+
 		AllowedOrigins: []string{
 			"http://localhost:3000",
 			"http://localhost:3001",
@@ -71,6 +82,16 @@ func main() {
 		},
 
 		AllowCredentials: true,
+
+		// =========================
+		// EXPOSE PAGINATION HEADERS
+		// =========================
+		ExposedHeaders: []string{
+			"X-Total-Count",
+			"X-Total-Pages",
+			"X-Page",
+			"X-Limit",
+		},
 	})
 
 	handler := c.Handler(router)

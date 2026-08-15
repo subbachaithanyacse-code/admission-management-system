@@ -68,6 +68,7 @@ function Courses() {
 
       console.log("COURSES:", data);
 
+      // Current page courses
       setCourses(Array.isArray(data) ? data : []);
 
       // ================================
@@ -80,6 +81,12 @@ function Courses() {
       const totalPagesHeader =
         response.headers.get("X-Total-Pages");
 
+      const pageHeader =
+        response.headers.get("X-Page");
+
+      const limitHeader =
+        response.headers.get("X-Limit");
+
       console.log(
         "X-Total-Count:",
         totalCountHeader
@@ -90,36 +97,31 @@ function Courses() {
         totalPagesHeader
       );
 
-      let calculatedTotal = totalCountHeader
-        ? Number(totalCountHeader)
-        : 0;
+      console.log(
+        "X-Page:",
+        pageHeader
+      );
 
-      let calculatedPages = totalPagesHeader
-        ? Number(totalPagesHeader)
-        : 0;
+      console.log(
+        "X-Limit:",
+        limitHeader
+      );
 
       // ================================
-      // FALLBACK
+      // SET PAGINATION
       // ================================
-      // If headers are not exposed by CORS,
-      // calculate from current data.
 
-      if (calculatedTotal === 0) {
-        if (page === 1 && data.length < limit) {
-          calculatedTotal = data.length;
-        }
-      }
+      setTotalRecords(
+        totalCountHeader
+          ? Number(totalCountHeader)
+          : 0
+      );
 
-      if (calculatedPages === 0) {
-        if (data.length > 0) {
-          calculatedPages = Math.ceil(
-            calculatedTotal / limit
-          );
-        }
-      }
-
-      setTotalRecords(calculatedTotal);
-      setTotalPages(calculatedPages);
+      setTotalPages(
+        totalPagesHeader
+          ? Number(totalPagesHeader)
+          : 0
+      );
 
     } catch (error) {
       console.error(
@@ -135,6 +137,9 @@ function Courses() {
       setMessageType("error");
 
       setCourses([]);
+
+      setTotalRecords(0);
+      setTotalPages(0);
 
     } finally {
       setLoading(false);
@@ -190,25 +195,16 @@ function Courses() {
   };
 
   // ================================
-  // EDIT
+  // EDIT COURSE
   // ================================
 
   const editCourse = (course) => {
     setFormData({
-      course_code:
-        course.course_code || "",
-
-      course_name:
-        course.course_name || "",
-
-      duration:
-        course.duration || "",
-
-      fee:
-        course.fee ?? "",
-
-      seats:
-        course.seats ?? "",
+      course_code: course.course_code || "",
+      course_name: course.course_name || "",
+      duration: course.duration || "",
+      fee: course.fee ?? "",
+      seats: course.seats ?? "",
     });
 
     setEditingId(course.id);
@@ -222,32 +218,20 @@ function Courses() {
 
   const validateForm = () => {
     if (!formData.course_code.trim()) {
-      setMessage(
-        "Course Code is required"
-      );
-
+      setMessage("Course Code is required");
       setMessageType("error");
-
       return false;
     }
 
     if (!formData.course_name.trim()) {
-      setMessage(
-        "Course Name is required"
-      );
-
+      setMessage("Course Name is required");
       setMessageType("error");
-
       return false;
     }
 
     if (!formData.duration.trim()) {
-      setMessage(
-        "Duration is required"
-      );
-
+      setMessage("Duration is required");
       setMessageType("error");
-
       return false;
     }
 
@@ -255,12 +239,8 @@ function Courses() {
       formData.fee === "" ||
       Number(formData.fee) < 0
     ) {
-      setMessage(
-        "Fee cannot be negative"
-      );
-
+      setMessage("Fee cannot be negative");
       setMessageType("error");
-
       return false;
     }
 
@@ -268,12 +248,8 @@ function Courses() {
       formData.seats === "" ||
       Number(formData.seats) < 0
     ) {
-      setMessage(
-        "Seats cannot be negative"
-      );
-
+      setMessage("Seats cannot be negative");
       setMessageType("error");
-
       return false;
     }
 
@@ -281,7 +257,7 @@ function Courses() {
   };
 
   // ================================
-  // ADD / UPDATE
+  // ADD / UPDATE COURSE
   // ================================
 
   const saveCourse = async (e) => {
@@ -321,11 +297,10 @@ function Courses() {
       }
 
       const response = await fetch(url, {
-        method,
+        method: method,
 
         headers: {
-          "Content-Type":
-            "application/json",
+          "Content-Type": "application/json",
         },
 
         body: JSON.stringify(payload),
@@ -348,6 +323,7 @@ function Courses() {
 
       resetForm();
 
+      // Reload current page
       await getCourses();
 
     } catch (error) {
@@ -369,7 +345,7 @@ function Courses() {
   };
 
   // ================================
-  // DELETE
+  // DELETE COURSE
   // ================================
 
   const deleteCourse = async (id) => {
@@ -406,8 +382,7 @@ function Courses() {
 
       setMessageType("success");
 
-      // If last record on current page
-      // and current page is greater than 1
+      // If last record on page
       if (
         courses.length === 1 &&
         page > 1
@@ -436,7 +411,7 @@ function Courses() {
   };
 
   // ================================
-  // NEXT
+  // NEXT PAGE
   // ================================
 
   const nextPage = () => {
@@ -444,14 +419,15 @@ function Courses() {
       !loading &&
       page < totalPages
     ) {
-      setPage((previousPage) =>
-        previousPage + 1
+      setPage(
+        (previousPage) =>
+          previousPage + 1
       );
     }
   };
 
   // ================================
-  // PREVIOUS
+  // PREVIOUS PAGE
   // ================================
 
   const previousPage = () => {
@@ -459,14 +435,15 @@ function Courses() {
       !loading &&
       page > 1
     ) {
-      setPage((previousPage) =>
-        previousPage - 1
+      setPage(
+        (previousPage) =>
+          previousPage - 1
       );
     }
   };
 
   // ================================
-  // LIMIT
+  // CHANGE LIMIT
   // ================================
 
   const changeLimit = (e) => {
@@ -490,20 +467,23 @@ function Courses() {
       }}
     >
 
-      {/* HEADER */}
+      {/* ================================
+          HEADER
+      ================================= */}
 
       <div
         style={{
           display: "flex",
-          justifyContent:
-            "space-between",
+          justifyContent: "space-between",
           alignItems: "center",
           marginBottom: "25px",
           flexWrap: "wrap",
           gap: "15px",
         }}
       >
+
         <div>
+
           <h1
             style={{
               margin: 0,
@@ -521,6 +501,7 @@ function Courses() {
           >
             Manage all courses
           </p>
+
         </div>
 
         <div
@@ -529,6 +510,7 @@ function Courses() {
             gap: "10px",
           }}
         >
+
           <button
             onClick={getCourses}
             disabled={loading}
@@ -543,10 +525,14 @@ function Courses() {
           >
             ➕ Add Course
           </button>
+
         </div>
+
       </div>
 
-      {/* MESSAGE */}
+      {/* ================================
+          MESSAGE
+      ================================= */}
 
       {message && (
         <div
@@ -571,7 +557,9 @@ function Courses() {
         </div>
       )}
 
-      {/* FORM */}
+      {/* ================================
+          FORM
+      ================================= */}
 
       {showForm && (
         <div
@@ -584,6 +572,7 @@ function Courses() {
               "0 2px 8px rgba(0,0,0,0.08)",
           }}
         >
+
           <h2
             style={{
               marginTop: 0,
@@ -606,7 +595,10 @@ function Courses() {
               }}
             >
 
+              {/* COURSE CODE */}
+
               <div>
+
                 <label style={labelStyle}>
                   Course Code *
                 </label>
@@ -621,9 +613,13 @@ function Courses() {
                   placeholder="Example: CSE-01"
                   style={inputStyle}
                 />
+
               </div>
 
+              {/* COURSE NAME */}
+
               <div>
+
                 <label style={labelStyle}>
                   Course Name *
                 </label>
@@ -638,9 +634,13 @@ function Courses() {
                   placeholder="Example: B.Tech CSE"
                   style={inputStyle}
                 />
+
               </div>
 
+              {/* DURATION */}
+
               <div>
+
                 <label style={labelStyle}>
                   Duration *
                 </label>
@@ -655,9 +655,13 @@ function Courses() {
                   placeholder="Example: 4 Years"
                   style={inputStyle}
                 />
+
               </div>
 
+              {/* FEE */}
+
               <div>
+
                 <label style={labelStyle}>
                   Fee *
                 </label>
@@ -671,9 +675,13 @@ function Courses() {
                   placeholder="Example: 50000"
                   style={inputStyle}
                 />
+
               </div>
 
+              {/* SEATS */}
+
               <div>
+
                 <label style={labelStyle}>
                   Seats *
                 </label>
@@ -687,9 +695,12 @@ function Courses() {
                   placeholder="Example: 60"
                   style={inputStyle}
                 />
+
               </div>
 
             </div>
+
+            {/* FORM BUTTONS */}
 
             <div
               style={{
@@ -698,6 +709,7 @@ function Courses() {
                 marginTop: "20px",
               }}
             >
+
               <button
                 type="submit"
                 disabled={loading}
@@ -717,13 +729,17 @@ function Courses() {
               >
                 Cancel
               </button>
+
             </div>
 
           </form>
+
         </div>
       )}
 
-      {/* SUMMARY */}
+      {/* ================================
+          SUMMARY
+      ================================= */}
 
       <div
         style={{
@@ -735,11 +751,11 @@ function Courses() {
             "0 2px 8px rgba(0,0,0,0.08)",
         }}
       >
+
         <div
           style={{
             display: "flex",
-            justifyContent:
-              "space-between",
+            justifyContent: "space-between",
             alignItems: "center",
             flexWrap: "wrap",
             gap: "15px",
@@ -757,6 +773,7 @@ function Courses() {
           </div>
 
           <div>
+
             <label>
               <b>
                 Records per page:
@@ -773,6 +790,7 @@ function Courses() {
                 borderRadius: "5px",
               }}
             >
+
               <option value="10">
                 10
               </option>
@@ -788,13 +806,18 @@ function Courses() {
               <option value="100">
                 100
               </option>
+
             </select>
+
           </div>
 
         </div>
+
       </div>
 
-      {/* TABLE */}
+      {/* ================================
+          COURSE TABLE
+      ================================= */}
 
       <div
         style={{
@@ -816,6 +839,7 @@ function Courses() {
         </h2>
 
         {loading ? (
+
           <div
             style={{
               textAlign: "center",
@@ -825,29 +849,32 @@ function Courses() {
           >
             Loading courses...
           </div>
+
         ) : (
+
           <div
             style={{
               overflowX: "auto",
             }}
           >
+
             <table
               style={{
                 width: "100%",
-                borderCollapse:
-                  "collapse",
+                borderCollapse: "collapse",
                 minWidth: "900px",
               }}
             >
 
               <thead>
+
                 <tr
                   style={{
-                    backgroundColor:
-                      "#2563eb",
+                    backgroundColor: "#2563eb",
                     color: "white",
                   }}
                 >
+
                   <th style={tableHeaderStyle}>
                     ID
                   </th>
@@ -875,13 +902,17 @@ function Courses() {
                   <th style={tableHeaderStyle}>
                     Actions
                   </th>
+
                 </tr>
+
               </thead>
 
               <tbody>
 
                 {courses.length > 0 ? (
+
                   courses.map((course) => (
+
                     <tr
                       key={course.id}
                       style={{
@@ -922,6 +953,7 @@ function Courses() {
                       </td>
 
                       <td style={tableCellStyle}>
+
                         <div
                           style={{
                             display: "flex",
@@ -954,32 +986,43 @@ function Courses() {
                           </button>
 
                         </div>
+
                       </td>
 
                     </tr>
+
                   ))
+
                 ) : (
+
                   <tr>
+
                     <td
                       colSpan="7"
                       style={{
-                        textAlign:
-                          "center",
+                        textAlign: "center",
                         padding: "30px",
                         color: "#777",
                       }}
                     >
                       No courses found
                     </td>
+
                   </tr>
+
                 )}
 
               </tbody>
+
             </table>
+
           </div>
+
         )}
 
-        {/* PAGINATION */}
+        {/* ================================
+            PAGINATION
+        ================================= */}
 
         <div
           style={{
@@ -995,12 +1038,10 @@ function Courses() {
           <button
             onClick={previousPage}
             disabled={
-              page <= 1 ||
-              loading
+              page <= 1 || loading
             }
             style={paginationButtonStyle(
-              page <= 1 ||
-              loading
+              page <= 1 || loading
             )}
           >
             ◀ Previous
@@ -1012,8 +1053,7 @@ function Courses() {
               color: "#374151",
             }}
           >
-            Page {page} of{" "}
-            {totalPages}
+            Page {page} of {totalPages}
           </span>
 
           <button
@@ -1025,8 +1065,8 @@ function Courses() {
             }
             style={paginationButtonStyle(
               page >= totalPages ||
-              totalPages === 0 ||
-              loading
+                totalPages === 0 ||
+                loading
             )}
           >
             Next ▶
@@ -1132,9 +1172,7 @@ const deleteButtonStyle = {
   fontWeight: "600",
 };
 
-const paginationButtonStyle = (
-  disabled
-) => ({
+const paginationButtonStyle = (disabled) => ({
   backgroundColor: disabled
     ? "#d1d5db"
     : "#2563eb",
