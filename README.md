@@ -333,3 +333,4 @@ The core Admission Management System is implemented with:
 * CORS
 * Database Backup
 * GitHub Repository
+s
