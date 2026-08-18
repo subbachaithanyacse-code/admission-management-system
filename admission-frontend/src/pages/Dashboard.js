@@ -13,7 +13,7 @@ function Dashboard() {
   // Same API is used by Laptop + Mobile
   // =====================================================
 
-  const API_BASE_URL = "http://192.168.29.19:8086";
+   const API_BASE_URL = "http://127.0.0.1:8086";
 
   // =====================================================
   // GET COUNT
