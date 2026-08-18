@@ -1,7 +1,7 @@
 package Routes
 
 import (
-	"course-service/Controllers"
+	"course-service/controllers"
 
 	"github.com/gorilla/mux"
 )
