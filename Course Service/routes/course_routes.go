@@ -1,6 +1,8 @@
-package Routes
+package routes
 
 import (
+	"net/http"
+
 	"course-service/controllers"
 
 	"github.com/gorilla/mux"
@@ -8,9 +10,33 @@ import (
 
 func RegisterCourseRoutes(router *mux.Router) {
 
-	router.HandleFunc("/courses", Controllers.CreateCourse).Methods("POST")
-	router.HandleFunc("/courses", Controllers.GetCourses).Methods("GET")
-	router.HandleFunc("/courses/{id}", Controllers.GetCourseByID).Methods("GET")
-	router.HandleFunc("/courses/{id}", Controllers.UpdateCourse).Methods("PUT")
-	router.HandleFunc("/courses/{id}", Controllers.DeleteCourse).Methods("DELETE")
+	// Create Course
+	router.HandleFunc(
+		"/courses",
+		controllers.CreateCourse,
+	).Methods(http.MethodPost)
+
+	// Get Courses with pagination
+	router.HandleFunc(
+		"/courses",
+		controllers.GetCourses,
+	).Methods(http.MethodGet)
+
+	// Get Course by ID
+	router.HandleFunc(
+		"/courses/{id}",
+		controllers.GetCourseByID,
+	).Methods(http.MethodGet)
+
+	// Update Course
+	router.HandleFunc(
+		"/courses/{id}",
+		controllers.UpdateCourse,
+	).Methods(http.MethodPut)
+
+	// Delete Course
+	router.HandleFunc(
+		"/courses/{id}",
+		controllers.DeleteCourse,
+	).Methods(http.MethodDelete)
 }

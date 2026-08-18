@@ -1,26 +1,45 @@
-package Database
+package database
 
 import (
 	"context"
 	"fmt"
+	"os"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-var DB *pgx.Conn
+var DB *pgxpool.Pool
 
 func ConnectDB() {
 
-	var err error
+	databaseURL := os.Getenv("DATABASE_URL")
 
-	DB, err = pgx.Connect(
+	if databaseURL == "" {
+		fmt.Println("DATABASE_URL not found")
+		return
+	}
+
+	config, err := pgxpool.ParseConfig(databaseURL)
+
+	if err != nil {
+		fmt.Println("Database Configuration Error:", err)
+		return
+	}
+
+	DB, err = pgxpool.NewWithConfig(
 		context.Background(),
-		"postgres://postgres:password@localhost:5432/admissiondb",
+		config,
 	)
 
 	if err != nil {
-		fmt.Println("Database Connection Failed")
-		fmt.Println(err)
+		fmt.Println("Database Connection Error:", err)
+		return
+	}
+
+	err = DB.Ping(context.Background())
+
+	if err != nil {
+		fmt.Println("Database Ping Error:", err)
 		return
 	}
 
