@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
-	"course-service/Database"
-	"course-service/Routes"
+	"course-service/database"
+	"course-service/routes"
 
 	"github.com/gorilla/mux"
 )
@@ -25,11 +26,19 @@ func main() {
 	fmt.Println("===================================")
 	fmt.Println(" Database Connected Successfully")
 	fmt.Println(" Course Service Started")
-	fmt.Println(" Running on Port :8085")
+
+	// Render provides PORT automatically.
+	// For local development, use 8085.
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8085"
+	}
+
+	fmt.Println(" Running on Port :" + port)
 	fmt.Println("===================================")
 
 	// Start Server
-	err := http.ListenAndServe(":8085", router)
+	err := http.ListenAndServe(":"+port, router)
 	if err != nil {
 		log.Fatal("Course Service Error:", err)
 	}

@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"course-service/Database"
+	"course-service/database"
 	"course-service/Models"
 
 	"github.com/gorilla/mux"
