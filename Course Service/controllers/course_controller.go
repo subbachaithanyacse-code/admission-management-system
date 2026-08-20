@@ -238,11 +238,7 @@ func GetCourses(w http.ResponseWriter, r *http.Request) {
 
 		fmt.Println("COURSE QUERY ERROR:", err)
 
-		http.Error(
-			w,
-			"Failed to fetch courses",
-			http.StatusInternalServerError,
-		)
+		http.Error(w, "COURSE FETCH ERROR: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
