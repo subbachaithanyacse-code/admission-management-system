@@ -206,15 +206,15 @@ func GetCourses(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 
-		fmt.Println("COURSE COUNT ERROR:", err)
+    fmt.Println("COURSE COUNT ERROR:", err)
 
-		http.Error(
-			w,
-			"Failed to count courses",
-			http.StatusInternalServerError,
-		)
-		return
-	}
+    http.Error(
+        w,
+        "COURSE COUNT ERROR: "+err.Error(),
+        http.StatusInternalServerError,
+    )
+    return
+}
 
 	// Paginated query
 	rows, err := database.DB.Query(
