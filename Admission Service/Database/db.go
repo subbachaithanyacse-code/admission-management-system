@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -13,8 +14,14 @@ var DB *pgxpool.Pool
 
 func ConnectDB() {
 
-	connStr := "postgres://postgres:password@localhost:5432/admissiondb"
+	// Get DATABASE_URL from environment variable
+	connStr := os.Getenv("DATABASE_URL")
 
+	if connStr == "" {
+		log.Fatal("DATABASE_URL is not set")
+	}
+
+	// Parse database configuration
 	config, err := pgxpool.ParseConfig(connStr)
 	if err != nil {
 		log.Fatal("Database Config Error:", err)
