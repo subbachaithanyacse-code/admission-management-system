@@ -1,5 +1,12 @@
 import React from "react";
-import { BrowserRouter, Routes, Route, Link, useLocation } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Link,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 
 import Dashboard from "./pages/Dashboard";
 import Students from "./pages/Students";
@@ -7,9 +14,11 @@ import Courses from "./pages/Courses";
 import Admissions from "./pages/Admissions";
 import Reports from "./pages/Reports";
 import Users from "./pages/Users";
+import Login from "./pages/Login";
 
 function Layout() {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const menuItems = [
     {
@@ -44,13 +53,29 @@ function Layout() {
     },
   ];
 
+  // ============================
+  // LOGOUT
+  // ============================
+
+  const handleLogout = () => {
+    localStorage.removeItem("isLoggedIn");
+    localStorage.removeItem("username");
+    localStorage.removeItem("role");
+
+    navigate("/login");
+  };
+
   return (
     <div className="app-container">
 
-      {/* Sidebar */}
+      {/* =========================
+          SIDEBAR
+      ========================= */}
+
       <aside className="sidebar">
 
         <div className="sidebar-header">
+
           <div className="college-logo">
             🎓
           </div>
@@ -59,6 +84,7 @@ function Layout() {
             <h2>Admission</h2>
             <span>Management System</span>
           </div>
+
         </div>
 
         <nav className="sidebar-menu">
@@ -78,6 +104,7 @@ function Layout() {
                   isActive ? "active" : ""
                 }`}
               >
+
                 <span className="menu-icon">
                   {item.icon}
                 </span>
@@ -85,6 +112,7 @@ function Layout() {
                 <span>
                   {item.label}
                 </span>
+
               </Link>
             );
           })}
@@ -92,14 +120,21 @@ function Layout() {
         </nav>
 
         <div className="sidebar-footer">
+
           <p>Admission Management</p>
           <span>System v1.0</span>
+
         </div>
 
       </aside>
 
-      {/* Main Content */}
+      {/* =========================
+          MAIN CONTENT
+      ========================= */}
+
       <main className="main-content">
+
+        {/* TOP HEADER */}
 
         <header className="top-header">
 
@@ -109,20 +144,35 @@ function Layout() {
             </h3>
           </div>
 
-          <div className="admin-profile">
+          <div className="header-right">
 
-            <div className="admin-avatar">
-              A
+            <div className="admin-profile">
+
+              <div className="admin-avatar">
+                A
+              </div>
+
+              <div>
+                <strong>Administrator</strong>
+                <span>Admin</span>
+              </div>
+
             </div>
 
-            <div>
-              <strong>Administrator</strong>
-              <span>Admin</span>
-            </div>
+            {/* LOGOUT BUTTON */}
+
+            <button
+              onClick={handleLogout}
+              className="logout-button"
+            >
+              🚪 Logout
+            </button>
 
           </div>
 
         </header>
+
+        {/* PAGE CONTENT */}
 
         <div className="page-content">
 
@@ -170,7 +220,10 @@ function Layout() {
 
       </main>
 
-      {/* CSS */}
+      {/* =========================
+          CSS
+      ========================= */}
+
       <style>{`
 
         * {
@@ -321,6 +374,16 @@ function Layout() {
           font-size: 17px;
         }
 
+        /* =========================
+           HEADER RIGHT
+        ========================= */
+
+        .header-right {
+          display: flex;
+          align-items: center;
+          gap: 20px;
+        }
+
         .admin-profile {
           display: flex;
           align-items: center;
@@ -350,6 +413,26 @@ function Layout() {
           color: #6b7280;
           font-size: 11px;
           margin-top: 2px;
+        }
+
+        /* =========================
+           LOGOUT BUTTON
+        ========================= */
+
+        .logout-button {
+          background: #dc2626;
+          color: white;
+          border: none;
+          padding: 10px 16px;
+          border-radius: 7px;
+          cursor: pointer;
+          font-size: 14px;
+          font-weight: 600;
+          transition: 0.2s;
+        }
+
+        .logout-button:hover {
+          background: #b91c1c;
         }
 
         .page-content {
@@ -397,6 +480,19 @@ function Layout() {
             padding: 0 15px;
           }
 
+          .admin-profile > div:last-child {
+            display: none;
+          }
+
+          .header-right {
+            gap: 10px;
+          }
+
+          .logout-button {
+            padding: 9px 12px;
+            font-size: 13px;
+          }
+
         }
 
       `}</style>
@@ -408,7 +504,25 @@ function Layout() {
 function App() {
   return (
     <BrowserRouter>
-      <Layout />
+
+      <Routes>
+
+        {/* LOGIN PAGE - WITHOUT SIDEBAR */}
+
+        <Route
+          path="/login"
+          element={<Login />}
+        />
+
+        {/* ALL OTHER PAGES - WITH SIDEBAR */}
+
+        <Route
+          path="/*"
+          element={<Layout />}
+        />
+
+      </Routes>
+
     </BrowserRouter>
   );
 }

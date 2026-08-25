@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 
 function Dashboard() {
@@ -8,38 +9,28 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // =====================================================
-  // API GATEWAY
-  // Same API is used by Laptop + Mobile
-  // =====================================================
+  // Render API Gateway
+  const API_BASE_URL =
+    "https://admission-api-gateway.onrender.com";
 
-   const API_BASE_URL = "https://admission-api-gateway.onrender.com";
-
-  // =====================================================
-  // GET COUNT
-  // =====================================================
-
+  // Get number of records from API response
   const getCount = (data, key) => {
-    // Example:
-    // [ {}, {}, {} ]
+    // Example: [ {}, {}, {} ]
     if (Array.isArray(data)) {
       return data.length;
     }
 
-    // Example:
-    // { students: [...] }
+    // Example: { students: [...] }
     if (data && Array.isArray(data[key])) {
       return data[key].length;
     }
 
-    // Example:
-    // { data: [...] }
+    // Example: { data: [...] }
     if (data && Array.isArray(data.data)) {
       return data.data.length;
     }
 
-    // Example:
-    // { count: 10 }
+    // Example: { count: 10 }
     if (data && typeof data.count === "number") {
       return data.count;
     }
@@ -47,10 +38,7 @@ function Dashboard() {
     return 0;
   };
 
-  // =====================================================
-  // FETCH API
-  // =====================================================
-
+  // Fetch API
   const fetchAPI = async (url) => {
     console.log("Calling API:", url);
 
@@ -61,7 +49,11 @@ function Dashboard() {
       },
     });
 
-    console.log("API Status:", url, response.status);
+    console.log(
+      "API Status:",
+      url,
+      response.status
+    );
 
     if (!response.ok) {
       throw new Error(
@@ -76,10 +68,7 @@ function Dashboard() {
     return data;
   };
 
-  // =====================================================
-  // LOAD DASHBOARD
-  // =====================================================
-
+  // Load dashboard data
   const loadDashboard = async () => {
     setLoading(true);
     setError("");
@@ -94,26 +83,6 @@ function Dashboard() {
         API_BASE_URL
       );
 
-      console.log(
-        "Students API:",
-        `${API_BASE_URL}/students`
-      );
-
-      console.log(
-        "Courses API:",
-        `${API_BASE_URL}/courses`
-      );
-
-      console.log(
-        "Admissions API:",
-        `${API_BASE_URL}/admissions`
-      );
-
-      console.log(
-        "========================================"
-      );
-
-      // Call all APIs
       const [
         studentData,
         courseData,
@@ -132,10 +101,7 @@ function Dashboard() {
         ),
       ]);
 
-      // =================================================
-      // COUNTS
-      // =================================================
-
+      // Calculate counts
       const studentCount = getCount(
         studentData,
         "students"
@@ -166,10 +132,7 @@ function Dashboard() {
         admissionCount
       );
 
-      // =================================================
-      // SET STATE
-      // =================================================
-
+      // Update dashboard
       setStudents(studentCount);
       setCourses(courseCount);
       setAdmissions(admissionCount);
@@ -185,25 +148,16 @@ function Dashboard() {
       setAdmissions(0);
 
       setError(
-        `Unable to connect to API Gateway: ${API_BASE_URL}`
+        "Unable to connect to API Gateway."
       );
-
     } finally {
       setLoading(false);
     }
   };
 
-  // =====================================================
-  // LOAD DASHBOARD WHEN PAGE OPENS
-  // =====================================================
-
   useEffect(() => {
     loadDashboard();
   }, []);
-
-  // =====================================================
-  // UI
-  // =====================================================
 
   return (
     <div
@@ -215,10 +169,7 @@ function Dashboard() {
       }}
     >
 
-      {/* =================================================
-          HEADER
-      ================================================= */}
-
+      {/* HEADER */}
       <div
         style={{
           display: "flex",
@@ -231,7 +182,6 @@ function Dashboard() {
       >
 
         <div>
-
           <h1
             style={{
               margin: 0,
@@ -250,7 +200,6 @@ function Dashboard() {
           >
             Overview of students, courses and admissions
           </p>
-
         </div>
 
         <button
@@ -270,10 +219,7 @@ function Dashboard() {
 
       </div>
 
-      {/* =================================================
-          ERROR
-      ================================================= */}
-
+      {/* ERROR */}
       {error && (
         <div
           style={{
@@ -286,23 +232,10 @@ function Dashboard() {
           }}
         >
           ⚠️ {error}
-
-          <div
-            style={{
-              marginTop: "8px",
-              fontSize: "14px",
-            }}
-          >
-            Make sure API Gateway is running on
-            port 8086.
-          </div>
         </div>
       )}
 
-      {/* =================================================
-          LOADING
-      ================================================= */}
-
+      {/* LOADING */}
       {loading ? (
 
         <div
@@ -321,10 +254,7 @@ function Dashboard() {
 
         <>
 
-          {/* =================================================
-              CARDS
-          ================================================= */}
-
+          {/* CARDS */}
           <div
             style={{
               display: "grid",
@@ -334,10 +264,7 @@ function Dashboard() {
             }}
           >
 
-            {/* =================================================
-                STUDENTS
-            ================================================= */}
-
+            {/* STUDENTS */}
             <div
               style={{
                 background: "white",
@@ -348,7 +275,6 @@ function Dashboard() {
                   "0 3px 10px rgba(0,0,0,0.08)",
               }}
             >
-
               <h3
                 style={{
                   color: "#667085",
@@ -374,13 +300,9 @@ function Dashboard() {
               >
                 Registered students
               </p>
-
             </div>
 
-            {/* =================================================
-                COURSES
-            ================================================= */}
-
+            {/* COURSES */}
             <div
               style={{
                 background: "white",
@@ -391,7 +313,6 @@ function Dashboard() {
                   "0 3px 10px rgba(0,0,0,0.08)",
               }}
             >
-
               <h3
                 style={{
                   color: "#667085",
@@ -417,13 +338,9 @@ function Dashboard() {
               >
                 Available courses
               </p>
-
             </div>
 
-            {/* =================================================
-                ADMISSIONS
-            ================================================= */}
-
+            {/* ADMISSIONS */}
             <div
               style={{
                 background: "white",
@@ -434,7 +351,6 @@ function Dashboard() {
                   "0 3px 10px rgba(0,0,0,0.08)",
               }}
             >
-
               <h3
                 style={{
                   color: "#667085",
@@ -460,19 +376,15 @@ function Dashboard() {
               >
                 Student admissions
               </p>
-
             </div>
 
           </div>
 
-          {/* =================================================
-              SYSTEM STATUS
-          ================================================= */}
-
+          {/* SYSTEM STATUS */}
           <div
             style={{
-              background: "white",
               marginTop: "30px",
+              background: "white",
               padding: "25px",
               borderRadius: "10px",
               boxShadow:
@@ -498,98 +410,64 @@ function Dashboard() {
               }}
             >
 
-              <StatusBox
-                title="Student Service"
-                status="Connected"
-              />
+              <div>
+                🟢 Student Service
+                <strong
+                  style={{
+                    display: "block",
+                    marginTop: "5px",
+                    color: "#12b76a",
+                  }}
+                >
+                  Connected
+                </strong>
+              </div>
 
-              <StatusBox
-                title="Course Service"
-                status="Connected"
-              />
+              <div>
+                🟢 Course Service
+                <strong
+                  style={{
+                    display: "block",
+                    marginTop: "5px",
+                    color: "#12b76a",
+                  }}
+                >
+                  Connected
+                </strong>
+              </div>
 
-              <StatusBox
-                title="Admission Service"
-                status="Connected"
-              />
+              <div>
+                🟢 Admission Service
+                <strong
+                  style={{
+                    display: "block",
+                    marginTop: "5px",
+                    color: "#12b76a",
+                  }}
+                >
+                  Connected
+                </strong>
+              </div>
 
-              <StatusBox
-                title="API Gateway"
-                status="Port 8086"
-              />
-
-            </div>
-
-            {/* =================================================
-                API URL
-            ================================================= */}
-
-            <div
-              style={{
-                marginTop: "20px",
-                padding: "12px",
-                background: "#f2f4f7",
-                borderRadius: "6px",
-                fontSize: "14px",
-                color: "#475467",
-                wordBreak: "break-all",
-              }}
-            >
-
-              <strong>
-                API Gateway:
-              </strong>{" "}
-
-              {API_BASE_URL}
+              <div>
+                🟢 API Gateway
+                <strong
+                  style={{
+                    display: "block",
+                    marginTop: "5px",
+                    color: "#12b76a",
+                  }}
+                >
+                  Connected
+                </strong>
+              </div>
 
             </div>
 
           </div>
 
         </>
-
       )}
-
-    </div>
-  );
-}
-
-// =========================================================
-// STATUS BOX
-// =========================================================
-
-function StatusBox({
-  title,
-  status,
-}) {
-
-  return (
-    <div
-      style={{
-        background: "#ecfdf3",
-        padding: "15px",
-        borderRadius: "8px",
-      }}
-    >
-
-      <div
-        style={{
-          color: "#027a48",
-          fontSize: "16px",
-        }}
-      >
-        🟢 {title}
-      </div>
-
-      <strong
-        style={{
-          color: "#05603a",
-          display: "block",
-          marginTop: "5px",
-        }}
-      >
-        {status}
-      </strong>
 
     </div>
   );
