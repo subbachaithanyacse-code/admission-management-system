@@ -3,15 +3,16 @@ import api from "../services/api";
 import { useNavigate } from "react-router-dom";
 
 function AddStudent() {
-
   const navigate = useNavigate();
 
   const [student, setStudent] = useState({
-    name: "",
+    fullname: "",
     email: "",
     phone: "",
-    department: "",
+    course: "",
   });
+
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setStudent({
@@ -23,75 +24,107 @@ function AddStudent() {
   const saveStudent = async (e) => {
     e.preventDefault();
 
-    try {
+    if (
+      !student.fullname ||
+      !student.email ||
+      !student.phone ||
+      !student.course
+    ) {
+      alert("Please fill all fields");
+      return;
+    }
 
-      await api.post("/students", student);
+    try {
+      setLoading(true);
+
+      console.log("Sending student:", student);
+
+      const response = await api.post("/students", student);
+
+      console.log("Student API response:", response.data);
 
       alert("Student Added Successfully");
 
       navigate("/students");
-
     } catch (error) {
+      console.error("Add Student Error:", error);
 
-      console.log(error);
-
-      alert("Failed To Add Student");
+      if (error.response) {
+        console.error("Server response:", error.response.data);
+        alert(`Failed To Add Student: ${error.response.data}`);
+      } else {
+        alert("Unable to connect to API Gateway");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div style={{ padding: "20px" }}>
-
       <h2>Add Student</h2>
 
       <form onSubmit={saveStudent}>
+        <div>
+          <label>Student Name</label>
+          <br />
+          <input
+            type="text"
+            name="fullname"
+            placeholder="Student Name"
+            value={student.fullname}
+            onChange={handleChange}
+          />
+        </div>
 
-        <input
-          type="text"
-          name="name"
-          placeholder="Student Name"
-          value={student.name}
-          onChange={handleChange}
-        />
+        <br />
 
-        <br /><br />
+        <div>
+          <label>Email</label>
+          <br />
+          <input
+            type="email"
+            name="email"
+            placeholder="Email"
+            value={student.email}
+            onChange={handleChange}
+          />
+        </div>
 
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          value={student.email}
-          onChange={handleChange}
-        />
+        <br />
 
-        <br /><br />
+        <div>
+          <label>Phone</label>
+          <br />
+          <input
+            type="text"
+            name="phone"
+            placeholder="Phone"
+            value={student.phone}
+            onChange={handleChange}
+          />
+        </div>
 
-        <input
-          type="text"
-          name="phone"
-          placeholder="Phone"
-          value={student.phone}
-          onChange={handleChange}
-        />
+        <br />
 
-        <br /><br />
+        <div>
+          <label>Course</label>
+          <br />
+          <input
+            type="text"
+            name="course"
+            placeholder="Course e.g. CSE"
+            value={student.course}
+            onChange={handleChange}
+          />
+        </div>
 
-        <input
-          type="text"
-          name="department"
-          placeholder="Department"
-          value={student.department}
-          onChange={handleChange}
-        />
+        <br />
 
-        <br /><br />
-
-        <button type="submit">
-          Save Student
+        <button type="submit" disabled={loading}>
+          {loading ? "Saving..." : "Save Student"}
         </button>
-
       </form>
-
     </div>
   );
 }
