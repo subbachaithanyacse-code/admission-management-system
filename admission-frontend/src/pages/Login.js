@@ -9,6 +9,9 @@ function Login() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Production API Gateway
+  const API = "https://admission-api-gateway.onrender.com";
+
   const handleLogin = async (e) => {
     e.preventDefault();
 
@@ -21,7 +24,7 @@ function Login() {
       setLoading(true);
 
       const response = await axios.post(
-        "http://127.0.0.1:8086/login",
+        `${API}/login`,
         {
           username: username.trim(),
           password: password,
@@ -79,7 +82,7 @@ function Login() {
         }
       } else if (error.request) {
         alert(
-          "Unable to connect to server. Please make sure API Gateway is running on port 8086."
+          "Unable to connect to API Gateway. Please try again."
         );
       } else {
         alert("Login request failed.");
