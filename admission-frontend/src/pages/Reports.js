@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 
 function Reports() {
-  const API = "http://localhost:8086";
+  const API = "https://admission-api-gateway.onrender.com";
 
   const [students, setStudents] = useState([]);
   const [courses, setCourses] = useState([]);

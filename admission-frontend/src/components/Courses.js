@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 
 function Courses() {
-  const API = "http://localhost:8086";
+  const API = "https://admission-api-gateway.onrender.com";
 
   // =========================================
   // COURSE DATA
