@@ -18,6 +18,16 @@ func main() {
 	router := mux.NewRouter()
 
 	// ============================================
+	// HEALTH CHECK
+	// ============================================
+
+	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"ok","service":"api-gateway"}`))
+	}).Methods("GET")
+
+	// ============================================
 	// SERVICE URLs
 	// ============================================
 
@@ -49,10 +59,10 @@ func main() {
 
 	c := cors.New(cors.Options{
 		AllowedOrigins: []string{
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "https://admission-frontend.vercel.app",
-},
+			"http://localhost:3000",
+			"http://localhost:3001",
+			"https://admission-frontend.vercel.app",
+		},
 
 		AllowedMethods: []string{
 			"GET",
