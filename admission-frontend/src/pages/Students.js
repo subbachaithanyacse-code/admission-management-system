@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Navbar from "../components/Navbar";
 
-const API_URL = "http://127.0.0.1:8086";
+const API_URL = "https://admission-api-gateway.onrender.com";
 const PAGE_SIZE = 10;
 
 function Students() {
