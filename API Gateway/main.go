@@ -53,6 +53,8 @@ func main() {
 
 	router.PathPrefix("/admissions").HandlerFunc(AdmissionProxy)
 
+        router.HandleFunc("/login", AdmissionProxy).Methods("POST", "OPTIONS")
+
 	// ============================================
 	// CORS
 	// ============================================
