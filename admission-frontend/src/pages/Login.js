@@ -56,7 +56,7 @@ function Login() {
 
         alert("Login Successful");
 
-        navigate("/dashboard");
+        navigate("/");
       } else {
         alert(
           response.data.message ||
