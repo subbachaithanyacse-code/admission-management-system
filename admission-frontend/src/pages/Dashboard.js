@@ -1,4 +1,4 @@
-
+```javascript
 import React, { useEffect, useState } from "react";
 
 function Dashboard() {
@@ -15,22 +15,18 @@ function Dashboard() {
 
   // Get number of records from API response
   const getCount = (data, key) => {
-    // Example: [ {}, {}, {} ]
     if (Array.isArray(data)) {
       return data.length;
     }
 
-    // Example: { students: [...] }
     if (data && Array.isArray(data[key])) {
       return data[key].length;
     }
 
-    // Example: { data: [...] }
     if (data && Array.isArray(data.data)) {
       return data.data.length;
     }
 
-    // Example: { count: 10 }
     if (data && typeof data.count === "number") {
       return data.count;
     }
@@ -49,11 +45,7 @@ function Dashboard() {
       },
     });
 
-    console.log(
-      "API Status:",
-      url,
-      response.status
-    );
+    console.log("API Status:", url, response.status);
 
     if (!response.ok) {
       throw new Error(
@@ -69,90 +61,86 @@ function Dashboard() {
   };
 
   // Load dashboard data
+  // Each service is handled independently.
+  // If one service returns 429, the other services can still display.
   const loadDashboard = async () => {
     setLoading(true);
     setError("");
 
-    try {
-      console.log(
-        "========================================"
-      );
+    console.log("========================================");
+    console.log("API Gateway:", API_BASE_URL);
 
-      console.log(
-        "API Gateway:",
-        API_BASE_URL
-      );
+    const results = await Promise.allSettled([
+      fetchAPI(`${API_BASE_URL}/students`),
+      fetchAPI(`${API_BASE_URL}/courses`),
+      fetchAPI(`${API_BASE_URL}/admissions`),
+    ]);
 
-      const [
-        studentData,
-        courseData,
-        admissionData,
-      ] = await Promise.all([
-        fetchAPI(
-          `${API_BASE_URL}/students`
-        ),
-
-        fetchAPI(
-          `${API_BASE_URL}/courses`
-        ),
-
-        fetchAPI(
-          `${API_BASE_URL}/admissions`
-        ),
-      ]);
-
-      // Calculate counts
-      const studentCount = getCount(
-        studentData,
+    // STUDENTS
+    if (results[0].status === "fulfilled") {
+      const count = getCount(
+        results[0].value,
         "students"
       );
 
-      const courseCount = getCount(
-        courseData,
+      console.log("Student Count:", count);
+
+      setStudents(count);
+    } else {
+      console.error(
+        "Students API Error:",
+        results[0].reason
+      );
+    }
+
+    // COURSES
+    if (results[1].status === "fulfilled") {
+      const count = getCount(
+        results[1].value,
         "courses"
       );
 
-      const admissionCount = getCount(
-        admissionData,
+      console.log("Course Count:", count);
+
+      setCourses(count);
+    } else {
+      console.error(
+        "Courses API Error:",
+        results[1].reason
+      );
+    }
+
+    // ADMISSIONS
+    if (results[2].status === "fulfilled") {
+      const count = getCount(
+        results[2].value,
         "admissions"
       );
 
-      console.log(
-        "Student Count:",
-        studentCount
-      );
+      console.log("Admission Count:", count);
 
-      console.log(
-        "Course Count:",
-        courseCount
-      );
-
-      console.log(
-        "Admission Count:",
-        admissionCount
-      );
-
-      // Update dashboard
-      setStudents(studentCount);
-      setCourses(courseCount);
-      setAdmissions(admissionCount);
-
-    } catch (err) {
+      setAdmissions(count);
+    } else {
       console.error(
-        "Dashboard Error:",
-        err
+        "Admissions API Error:",
+        results[2].reason
       );
-
-      setStudents(0);
-      setCourses(0);
-      setAdmissions(0);
-
-      setError(
-        "Unable to connect to API Gateway."
-      );
-    } finally {
-      setLoading(false);
     }
+
+    // Check whether any service failed
+    const failedServices = results.filter(
+      (result) => result.status === "rejected"
+    ).length;
+
+    if (failedServices > 0) {
+      setError(
+        "Some services are temporarily unavailable. Please refresh again."
+      );
+    } else {
+      setError("");
+    }
+
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -168,7 +156,6 @@ function Dashboard() {
         boxSizing: "border-box",
       }}
     >
-
       {/* HEADER */}
       <div
         style={{
@@ -180,7 +167,6 @@ function Dashboard() {
           gap: "15px",
         }}
       >
-
         <div>
           <h1
             style={{
@@ -216,19 +202,18 @@ function Dashboard() {
         >
           🔄 Refresh
         </button>
-
       </div>
 
       {/* ERROR */}
       {error && (
         <div
           style={{
-            background: "#ffe2e2",
-            color: "#b42318",
+            background: "#fff4e5",
+            color: "#b54708",
             padding: "15px",
             borderRadius: "8px",
             marginBottom: "20px",
-            border: "1px solid #f5b5b5",
+            border: "1px solid #f5c26b",
           }}
         >
           ⚠️ {error}
@@ -237,7 +222,6 @@ function Dashboard() {
 
       {/* LOADING */}
       {loading ? (
-
         <div
           style={{
             background: "white",
@@ -249,11 +233,8 @@ function Dashboard() {
         >
           Loading dashboard...
         </div>
-
       ) : (
-
         <>
-
           {/* CARDS */}
           <div
             style={{
@@ -263,7 +244,6 @@ function Dashboard() {
               gap: "20px",
             }}
           >
-
             {/* STUDENTS */}
             <div
               style={{
@@ -377,25 +357,23 @@ function Dashboard() {
                 Student admissions
               </p>
             </div>
-
           </div>
 
           {/* SYSTEM STATUS */}
           <div
             style={{
-              marginTop: "30px",
               background: "white",
+              marginTop: "30px",
               padding: "25px",
               borderRadius: "10px",
               boxShadow:
                 "0 3px 10px rgba(0,0,0,0.08)",
             }}
           >
-
             <h2
               style={{
-                marginTop: 0,
                 color: "#172b4d",
+                marginTop: 0,
               }}
             >
               System Status
@@ -409,68 +387,44 @@ function Dashboard() {
                 gap: "15px",
               }}
             >
-
               <div>
-                🟢 Student Service
-                <strong
-                  style={{
-                    display: "block",
-                    marginTop: "5px",
-                    color: "#12b76a",
-                  }}
-                >
+                🟢 <strong>Student Service</strong>
+                <br />
+                <span style={{ color: "#12b76a" }}>
                   Connected
-                </strong>
+                </span>
               </div>
 
               <div>
-                🟢 Course Service
-                <strong
-                  style={{
-                    display: "block",
-                    marginTop: "5px",
-                    color: "#12b76a",
-                  }}
-                >
+                🟢 <strong>Course Service</strong>
+                <br />
+                <span style={{ color: "#12b76a" }}>
                   Connected
-                </strong>
+                </span>
               </div>
 
               <div>
-                🟢 Admission Service
-                <strong
-                  style={{
-                    display: "block",
-                    marginTop: "5px",
-                    color: "#12b76a",
-                  }}
-                >
+                🟢 <strong>Admission Service</strong>
+                <br />
+                <span style={{ color: "#12b76a" }}>
                   Connected
-                </strong>
+                </span>
               </div>
 
               <div>
-                🟢 API Gateway
-                <strong
-                  style={{
-                    display: "block",
-                    marginTop: "5px",
-                    color: "#12b76a",
-                  }}
-                >
+                🟢 <strong>API Gateway</strong>
+                <br />
+                <span style={{ color: "#12b76a" }}>
                   Connected
-                </strong>
+                </span>
               </div>
-
             </div>
-
           </div>
-
         </>
       )}
-
     </div>
   );
 }
 
 export default Dashboard;
+```
