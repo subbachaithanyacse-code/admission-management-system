@@ -49,10 +49,10 @@ func main() {
 
 	c := cors.New(cors.Options{
 		AllowedOrigins: []string{
-			"http://localhost:3000",
-			"http://localhost:3001",
-			"*",
-		},
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "https://admission-frontend.vercel.app",
+},
 
 		AllowedMethods: []string{
 			"GET",
