@@ -1,4 +1,3 @@
-```javascript
 import React, { useEffect, useState } from "react";
 
 function Dashboard() {
@@ -9,11 +8,9 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Render API Gateway
   const API_BASE_URL =
     "https://admission-api-gateway.onrender.com";
 
-  // Get number of records from API response
   const getCount = (data, key) => {
     if (Array.isArray(data)) {
       return data.length;
@@ -34,7 +31,6 @@ function Dashboard() {
     return 0;
   };
 
-  // Fetch API
   const fetchAPI = async (url) => {
     console.log("Calling API:", url);
 
@@ -45,7 +41,11 @@ function Dashboard() {
       },
     });
 
-    console.log("API Status:", url, response.status);
+    console.log(
+      "API Status:",
+      url,
+      response.status
+    );
 
     if (!response.ok) {
       throw new Error(
@@ -60,9 +60,6 @@ function Dashboard() {
     return data;
   };
 
-  // Load dashboard data
-  // Each service is handled independently.
-  // If one service returns 429, the other services can still display.
   const loadDashboard = async () => {
     setLoading(true);
     setError("");
@@ -76,7 +73,6 @@ function Dashboard() {
       fetchAPI(`${API_BASE_URL}/admissions`),
     ]);
 
-    // STUDENTS
     if (results[0].status === "fulfilled") {
       const count = getCount(
         results[0].value,
@@ -84,7 +80,6 @@ function Dashboard() {
       );
 
       console.log("Student Count:", count);
-
       setStudents(count);
     } else {
       console.error(
@@ -93,7 +88,6 @@ function Dashboard() {
       );
     }
 
-    // COURSES
     if (results[1].status === "fulfilled") {
       const count = getCount(
         results[1].value,
@@ -101,7 +95,6 @@ function Dashboard() {
       );
 
       console.log("Course Count:", count);
-
       setCourses(count);
     } else {
       console.error(
@@ -110,7 +103,6 @@ function Dashboard() {
       );
     }
 
-    // ADMISSIONS
     if (results[2].status === "fulfilled") {
       const count = getCount(
         results[2].value,
@@ -118,7 +110,6 @@ function Dashboard() {
       );
 
       console.log("Admission Count:", count);
-
       setAdmissions(count);
     } else {
       console.error(
@@ -127,7 +118,6 @@ function Dashboard() {
       );
     }
 
-    // Check whether any service failed
     const failedServices = results.filter(
       (result) => result.status === "rejected"
     ).length;
@@ -156,7 +146,6 @@ function Dashboard() {
         boxSizing: "border-box",
       }}
     >
-      {/* HEADER */}
       <div
         style={{
           display: "flex",
@@ -204,7 +193,6 @@ function Dashboard() {
         </button>
       </div>
 
-      {/* ERROR */}
       {error && (
         <div
           style={{
@@ -220,7 +208,6 @@ function Dashboard() {
         </div>
       )}
 
-      {/* LOADING */}
       {loading ? (
         <div
           style={{
@@ -235,7 +222,6 @@ function Dashboard() {
         </div>
       ) : (
         <>
-          {/* CARDS */}
           <div
             style={{
               display: "grid",
@@ -244,7 +230,6 @@ function Dashboard() {
               gap: "20px",
             }}
           >
-            {/* STUDENTS */}
             <div
               style={{
                 background: "white",
@@ -255,11 +240,7 @@ function Dashboard() {
                   "0 3px 10px rgba(0,0,0,0.08)",
               }}
             >
-              <h3
-                style={{
-                  color: "#667085",
-                }}
-              >
+              <h3 style={{ color: "#667085" }}>
                 🎓 Total Students
               </h3>
 
@@ -273,16 +254,11 @@ function Dashboard() {
                 {students}
               </div>
 
-              <p
-                style={{
-                  color: "#98a2b3",
-                }}
-              >
+              <p style={{ color: "#98a2b3" }}>
                 Registered students
               </p>
             </div>
 
-            {/* COURSES */}
             <div
               style={{
                 background: "white",
@@ -293,11 +269,7 @@ function Dashboard() {
                   "0 3px 10px rgba(0,0,0,0.08)",
               }}
             >
-              <h3
-                style={{
-                  color: "#667085",
-                }}
-              >
+              <h3 style={{ color: "#667085" }}>
                 📚 Total Courses
               </h3>
 
@@ -311,16 +283,11 @@ function Dashboard() {
                 {courses}
               </div>
 
-              <p
-                style={{
-                  color: "#98a2b3",
-                }}
-              >
+              <p style={{ color: "#98a2b3" }}>
                 Available courses
               </p>
             </div>
 
-            {/* ADMISSIONS */}
             <div
               style={{
                 background: "white",
@@ -331,11 +298,7 @@ function Dashboard() {
                   "0 3px 10px rgba(0,0,0,0.08)",
               }}
             >
-              <h3
-                style={{
-                  color: "#667085",
-                }}
-              >
+              <h3 style={{ color: "#667085" }}>
                 📝 Total Admissions
               </h3>
 
@@ -349,17 +312,12 @@ function Dashboard() {
                 {admissions}
               </div>
 
-              <p
-                style={{
-                  color: "#98a2b3",
-                }}
-              >
+              <p style={{ color: "#98a2b3" }}>
                 Student admissions
               </p>
             </div>
           </div>
 
-          {/* SYSTEM STATUS */}
           <div
             style={{
               background: "white",
@@ -427,4 +385,3 @@ function Dashboard() {
 }
 
 export default Dashboard;
-```
