@@ -53,7 +53,11 @@ func main() {
 
 	router.PathPrefix("/admissions").HandlerFunc(AdmissionProxy)
 
-        router.HandleFunc("/login", AdmissionProxy).Methods("POST", "OPTIONS")
+	// ============================================
+	// LOGIN ROUTE
+	// ============================================
+
+	router.PathPrefix("/login").HandlerFunc(AdmissionProxy)
 
 	// ============================================
 	// CORS
@@ -64,6 +68,7 @@ func main() {
 			"http://localhost:3000",
 			"http://localhost:3001",
 			"https://admission-frontend.vercel.app",
+			"https://admission-management-system-mftu.vercel.app",
 		},
 
 		AllowedMethods: []string{
