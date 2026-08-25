@@ -1,5 +1,4 @@
-
-		package main
+package main
 
 import (
 	"log"
@@ -7,6 +6,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"strings"
 )
 
 // =====================================================
@@ -14,6 +14,8 @@ import (
 // =====================================================
 
 func createProxy(target string) http.HandlerFunc {
+
+	target = strings.TrimRight(target, "/")
 
 	targetURL, err := url.Parse(target)
 
@@ -31,32 +33,40 @@ func createProxy(target string) http.HandlerFunc {
 
 	proxy := httputil.NewSingleHostReverseProxy(targetURL)
 
-	// IMPORTANT:
-	// Keep the original target host.
-	// This prevents Render routing loops.
-	originalDirector := proxy.Director
-
 	proxy.Director = func(r *http.Request) {
 
-		originalDirector(r)
+		// Keep the original API path.
+		// Example:
+		// Gateway /courses
+		// -> Course Service /courses
 
-		// Force request to the actual backend service.
 		r.URL.Scheme = targetURL.Scheme
 		r.URL.Host = targetURL.Host
 
-		// Set Host header to backend service.
+		// Keep the original path.
+		// Do NOT prepend another /courses or /students.
+
 		r.Host = targetURL.Host
 
+		r.Header.Set("X-Forwarded-Host", r.Host)
+
+		log.Println(
+			"=================================",
+		)
 		log.Println(
 			"Proxy:",
 			r.Method,
 			r.URL.Path,
-			"->",
+		)
+		log.Println(
+			"Target:",
 			targetURL.String(),
+		)
+		log.Println(
+			"=================================",
 		)
 	}
 
-	// Backend error handling
 	proxy.ErrorHandler = func(
 		w http.ResponseWriter,
 		r *http.Request,
@@ -64,7 +74,7 @@ func createProxy(target string) http.HandlerFunc {
 	) {
 
 		log.Println("=================================")
-		log.Println("Proxy Error")
+		log.Println("PROXY ERROR")
 		log.Println("Target:", target)
 		log.Println("Path:", r.URL.Path)
 		log.Println("Error:", err)
@@ -91,7 +101,7 @@ func StudentProxy(w http.ResponseWriter, r *http.Request) {
 	target := os.Getenv("STUDENT_SERVICE_URL")
 
 	if target == "" {
-		target = "http://127.0.0.1:8081"
+		target = "https://admission-student-service.onrender.com"
 	}
 
 	createProxy(target)(w, r)
@@ -106,7 +116,7 @@ func CourseProxy(w http.ResponseWriter, r *http.Request) {
 	target := os.Getenv("COURSE_SERVICE_URL")
 
 	if target == "" {
-		target = "http://127.0.0.1:8085"
+		target = "https://admission-management-system-4vid.onrender.com"
 	}
 
 	createProxy(target)(w, r)
@@ -121,7 +131,7 @@ func AdmissionProxy(w http.ResponseWriter, r *http.Request) {
 	target := os.Getenv("ADMISSION_SERVICE_URL")
 
 	if target == "" {
-		target = "http://127.0.0.1:8084"
+		target = "https://admission-service.onrender.com"
 	}
 
 	createProxy(target)(w, r)
