@@ -67,8 +67,13 @@ func main() {
 		AllowedOrigins: []string{
 			"http://localhost:3000",
 			"http://localhost:3001",
+
+			// Existing Vercel URLs
 			"https://admission-frontend.vercel.app",
 			"https://admission-management-system-mftu.vercel.app",
+
+			// Current Vercel frontend
+			"https://admission-management-system-kf99-iqh3jgl9u.vercel.app",
 		},
 
 		AllowedMethods: []string{
@@ -96,6 +101,7 @@ func main() {
 	port := os.Getenv("PORT")
 
 	if port == "" {
+		// Local development
 		port = "8086"
 	}
 
